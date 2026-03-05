@@ -137,6 +137,34 @@ nav.scrolled{background:rgba(7,17,31,.98);}
 .sbtn:hover{opacity:.86;}
 .sbtn svg{width:18px;height:18px;stroke:var(--navy);fill:none;stroke-width:2.2;}
 
+/* ── WHERE INPUT ── */
+.sf-input{background:none;border:none;outline:none;font-family:var(--sans);font-size:12px;font-weight:300;color:#18243e;width:100%;padding:0;cursor:text;}
+.sf-input::placeholder{color:#8090a8;}
+.where-suggestions{position:absolute;top:calc(100% + 8px);left:0;right:0;min-width:240px;background:white;border-radius:8px;box-shadow:0 12px 40px rgba(0,0,0,.18),0 0 0 1px rgba(0,0,0,.06);z-index:700;display:none;overflow:hidden;}
+.where-suggestions.show{display:block;}
+.ws-item{display:flex;align-items:center;gap:12px;padding:10px 14px;cursor:pointer;transition:background .15s;}
+.ws-item:hover{background:#f5f7fc;}
+.ws-icon{width:30px;height:30px;border-radius:50%;background:#eef2fb;display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:14px;}
+.ws-name{font-size:13px;font-weight:500;color:#18243e;}
+.ws-country{font-size:11px;color:#8090a8;}
+
+/* ── GUEST POPUP ── */
+.guest-popup{position:absolute;top:calc(100% + 8px);left:0;min-width:260px;background:white;border-radius:8px;box-shadow:0 12px 40px rgba(0,0,0,.18),0 0 0 1px rgba(0,0,0,.06);padding:16px;z-index:700;display:none;}
+.guest-popup.show{display:block;}
+.gp-row{display:flex;align-items:center;justify-content:space-between;padding:10px 0;border-bottom:1px solid rgba(0,0,0,.06);}
+.gp-row:last-of-type{border-bottom:none;}
+.gp-label{font-size:13px;font-weight:500;color:#18243e;}
+.gp-sub{font-size:11px;color:#8090a8;margin-top:1px;}
+.gp-counter{display:flex;align-items:center;gap:12px;}
+.gp-btn{width:28px;height:28px;border-radius:50%;border:1px solid rgba(0,0,0,.15);background:none;font-size:16px;color:#18243e;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .15s;line-height:1;}
+.gp-btn:hover:not(:disabled){border-color:var(--gold);color:var(--gold);}
+.gp-btn:disabled{opacity:.28;cursor:default;}
+.gp-num{font-size:15px;font-weight:500;color:#18243e;min-width:20px;text-align:center;}
+.gp-done{width:100%;margin-top:12px;background:var(--gold);border:none;color:var(--navy);font-family:var(--sans);font-size:12px;font-weight:600;padding:9px;border-radius:5px;cursor:pointer;transition:opacity .2s;}
+.gp-done:hover{opacity:.88;}
+.hp-room-total{font-size:11px;color:rgba(255,255,255,.4);margin-top:6px;}
+.hp-room-total strong{color:var(--gold2);}
+
 /* ── CALENDAR ── */
 .cal-popup{
   position:absolute;top:calc(100% + 10px);left:0;
@@ -339,7 +367,7 @@ footer{background:var(--navy);border-top:1px solid var(--line);padding:72px 0 36
     <span style="display:none;font-family:'Cormorant Garamond',serif;font-size:22px;color:white;letter-spacing:.04em;">Mac<span style="color:#c8a356">Queen</span></span>
   </a>
   <div class="nav-r">
-    <a href="#" class="pill" onclick="event.preventDefault();document.getElementById('trip-page').classList.add('active');document.body.style.overflow='hidden'">
+    <a href="#" class="pill" onclick="event.preventDefault();openTripPage()">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="13" height="13"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
       My Trip
     </a>
@@ -369,15 +397,16 @@ footer{background:var(--navy);border-top:1px solid var(--line);padding:72px 0 36
     <div class="search-wrap">
       <div class="sbox" id="sbox">
         <!-- WHERE -->
-        <div class="sf" id="sf-where">
+        <div class="sf" id="sf-where" onclick="document.getElementById('where-input').focus()">
           <span class="sf-lbl">Where?</span>
-          <span class="sf-val" id="val-where">Add destinations</span>
+          <input id="where-input" class="sf-input" type="text" placeholder="City or hotel name…" autocomplete="off">
+          <!-- Suggestions dropdown -->
+          <div class="where-suggestions" id="where-suggestions"></div>
         </div>
         <!-- CHECK-IN / CHECK-OUT -->
-        <div class="sf" id="sf-checkin" onclick="openCal('checkin')">
+        <div class="sf" id="sf-checkin">
           <span class="sf-lbl">When?</span>
           <span class="sf-val" id="val-checkin">Add dates</span>
-          <!-- Calendar popup -->
           <div class="cal-popup" id="cal-checkin">
             <div class="cal-month" id="cal-left"></div>
             <div class="cal-divider"></div>
@@ -385,9 +414,37 @@ footer{background:var(--navy);border-top:1px solid var(--line);padding:72px 0 36
           </div>
         </div>
         <!-- GUESTS -->
-        <div class="sf" id="sf-guests">
+        <div class="sf" id="sf-guests" onclick="toggleGuestPopup()">
           <span class="sf-lbl">Who?</span>
-          <span class="sf-val"><strong id="val-adults">2</strong> adults · <strong id="val-children">0</strong> children · <strong>1</strong> room</span>
+          <span class="sf-val"><strong id="val-adults">2</strong> adults · <strong id="val-children">0</strong> children · <strong id="val-rooms">1</strong> room</span>
+          <!-- Guest popup -->
+          <div class="guest-popup" id="guest-popup" onclick="event.stopPropagation()">
+            <div class="gp-row">
+              <div class="gp-info"><div class="gp-label">Adults</div><div class="gp-sub">Age 18+</div></div>
+              <div class="gp-counter">
+                <button class="gp-btn" onclick="changeGuest('adults',-1)">−</button>
+                <span class="gp-num" id="gp-adults">2</span>
+                <button class="gp-btn" onclick="changeGuest('adults',1)">+</button>
+              </div>
+            </div>
+            <div class="gp-row">
+              <div class="gp-info"><div class="gp-label">Children</div><div class="gp-sub">Age 0–17</div></div>
+              <div class="gp-counter">
+                <button class="gp-btn" onclick="changeGuest('children',-1)">−</button>
+                <span class="gp-num" id="gp-children">0</span>
+                <button class="gp-btn" onclick="changeGuest('children',1)">+</button>
+              </div>
+            </div>
+            <div class="gp-row">
+              <div class="gp-info"><div class="gp-label">Rooms</div><div class="gp-sub">Max 9</div></div>
+              <div class="gp-counter">
+                <button class="gp-btn" onclick="changeGuest('rooms',-1)">−</button>
+                <span class="gp-num" id="gp-rooms">1</span>
+                <button class="gp-btn" onclick="changeGuest('rooms',1)">+</button>
+              </div>
+            </div>
+            <button class="gp-done" onclick="closeGuestPopup()">Done</button>
+          </div>
         </div>
         <button class="sbtn">
           <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
@@ -828,46 +885,126 @@ const AMENITY_ICONS = {
   '20+ Restaurants':'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M3 2v7c0 1.1.9 2 2 2h4a2 2 0 002-2V2M7 2v20M21 15V2a5 5 0 00-5 5v6h3.5"/></svg>',
 };
 
+/* ═══════════════════════════════════════════
+   STATE
+═══════════════════════════════════════════ */
 let currentHotel = null;
-let searchParams  = {};
+let searchParams  = { where:'', checkin:'', checkout:'', adults:2, children:0, rooms:1 };
+let confirmedBooking = null; // set after user confirms
 
-// ── Open search results page ──
+/* ═══════════════════════════════════════════
+   WHERE INPUT — suggestions
+═══════════════════════════════════════════ */
+const DESTINATIONS = [
+  {name:'Dubai',      country:'UAE 🇦🇪',  icon:'🏙'},
+  {name:'Riyadh',     country:'Saudi Arabia 🇸🇦', icon:'🕌'},
+  {name:'Jeddah',     country:'Saudi Arabia 🇸🇦', icon:'🌊'},
+  {name:'Cairo',      country:'Egypt 🇪🇬',  icon:'🏛'},
+  {name:'Istanbul',   country:'Turkey 🇹🇷', icon:'🌉'},
+  {name:'Paris',      country:'France 🇫🇷', icon:'🗼'},
+  {name:'London',     country:'UK 🇬🇧',    icon:'🎡'},
+  {name:'New York',   country:'USA 🇺🇸',   icon:'🗽'},
+  {name:'Bangkok',    country:'Thailand 🇹🇭',icon:'🛕'},
+  {name:'Doha',       country:'Qatar 🇶🇦',  icon:'🏗'},
+  {name:'Abu Dhabi',  country:'UAE 🇦🇪',   icon:'🕌'},
+  {name:'Maldives',   country:'Maldives 🇲🇻',icon:'🏝'},
+];
+
+const whereInput = document.getElementById('where-input');
+const suggestionsBox = document.getElementById('where-suggestions');
+
+whereInput.addEventListener('input', () => {
+  const q = whereInput.value.trim().toLowerCase();
+  if(!q){ suggestionsBox.classList.remove('show'); return; }
+  const matches = DESTINATIONS.filter(d => d.name.toLowerCase().startsWith(q) || d.country.toLowerCase().includes(q));
+  if(!matches.length){ suggestionsBox.classList.remove('show'); return; }
+  suggestionsBox.innerHTML = matches.map(d => `
+    <div class="ws-item" onclick="selectDestination('${d.name}','${d.country}')">
+      <div class="ws-icon">${d.icon}</div>
+      <div><div class="ws-name">${d.name}</div><div class="ws-country">${d.country}</div></div>
+    </div>
+  `).join('');
+  suggestionsBox.classList.add('show');
+});
+
+whereInput.addEventListener('focus', () => {
+  if(!whereInput.value){
+    suggestionsBox.innerHTML = DESTINATIONS.slice(0,6).map(d=>`
+      <div class="ws-item" onclick="selectDestination('${d.name}','${d.country}')">
+        <div class="ws-icon">${d.icon}</div>
+        <div><div class="ws-name">${d.name}</div><div class="ws-country">${d.country}</div></div>
+      </div>
+    `).join('');
+    suggestionsBox.classList.add('show');
+  }
+});
+
+document.addEventListener('click', e => {
+  if(!e.target.closest('#sf-where')) suggestionsBox.classList.remove('show');
+  if(!e.target.closest('#sf-guests')) closeGuestPopup();
+});
+
+function selectDestination(name, country){
+  whereInput.value = name;
+  searchParams.where = name;
+  suggestionsBox.classList.remove('show');
+}
+
+/* ═══════════════════════════════════════════
+   GUEST POPUP
+═══════════════════════════════════════════ */
+function toggleGuestPopup(){
+  const p = document.getElementById('guest-popup');
+  p.classList.toggle('show');
+}
+function closeGuestPopup(){
+  document.getElementById('guest-popup').classList.remove('show');
+}
+function changeGuest(type, delta){
+  const mins = {adults:1, children:0, rooms:1};
+  const maxs = {adults:10, children:8, rooms:9};
+  searchParams[type] = Math.min(maxs[type], Math.max(mins[type], searchParams[type] + delta));
+  document.getElementById('gp-'+type).textContent = searchParams[type];
+  // update display
+  document.getElementById('val-adults').textContent   = searchParams.adults;
+  document.getElementById('val-children').textContent = searchParams.children;
+  document.getElementById('val-rooms').textContent    = searchParams.rooms;
+  // disable minus at min
+  document.querySelectorAll('.gp-btn').forEach(btn => {
+    const t = btn.getAttribute('onclick').match(/'(\w+)'/)[1];
+    const d = btn.textContent.trim() === '−' ? -1 : 1;
+    btn.disabled = (d===-1 && searchParams[t]<=mins[t]);
+  });
+}
+
+/* ═══════════════════════════════════════════
+   OPEN SEARCH
+═══════════════════════════════════════════ */
 function openSearchPage(){
-  searchParams = {
-    where   : document.getElementById('val-where').textContent,
-    when    : document.getElementById('val-checkin').textContent,
-    adults  : document.getElementById('val-adults').textContent,
-    children: document.getElementById('val-children').textContent,
-  };
+  searchParams.where    = whereInput.value.trim() || 'All Destinations';
+  searchParams.checkin  = window._checkinDate  || '';
+  searchParams.checkout = window._checkoutDate || '';
   renderSearchPage();
   document.getElementById('search-page').classList.add('active');
   document.getElementById('hotel-page').classList.remove('active');
   document.body.style.overflow='hidden';
 }
 
-// ── Close pages ──
 function closePage(id){
   document.getElementById(id).classList.remove('active');
   document.body.style.overflow='';
 }
 
-// ── Open hotel detail ──
-function openHotelPage(id){
-  currentHotel = HOTELS_DATA.find(h=>h.id===id);
-  renderHotelPage();
-  document.getElementById('hotel-page').classList.add('active');
-}
-
-function closeHotelPage(){
-  document.getElementById('hotel-page').classList.remove('active');
-}
-
-// ── Render search results ──
+/* ═══════════════════════════════════════════
+   RENDER SEARCH RESULTS
+═══════════════════════════════════════════ */
 function renderSearchPage(){
   const sp = searchParams;
-  document.getElementById('sp-where').textContent = sp.where==='Add destinations'?'All Destinations':sp.where;
-  document.getElementById('sp-when').textContent  = sp.when==='Add dates'?'Flexible dates':sp.when;
-  document.getElementById('sp-who').textContent   = sp.adults+' Adults · '+sp.children+' Children';
+  const dateStr = (sp.checkin && sp.checkout) ? `${sp.checkin} → ${sp.checkout}` : 'Flexible dates';
+  const guestStr = sp.adults+' Adult'+(sp.adults>1?'s':'')+(sp.children?' · '+sp.children+' Child'+(sp.children>1?'ren':''):'');
+  document.getElementById('sp-where').textContent = sp.where;
+  document.getElementById('sp-when').textContent  = dateStr;
+  document.getElementById('sp-who').textContent   = guestStr+' · '+sp.rooms+' Room'+(sp.rooms>1?'s':'');
 
   const grid = document.getElementById('results-grid');
   grid.innerHTML = HOTELS_DATA.map(h=>`
@@ -899,31 +1036,44 @@ function renderSearchPage(){
   `).join('');
 }
 
-// ── Render hotel detail ──
+/* ═══════════════════════════════════════════
+   HOTEL DETAIL PAGE
+═══════════════════════════════════════════ */
+function openHotelPage(id){
+  currentHotel = HOTELS_DATA.find(h=>h.id===id);
+  renderHotelPage();
+  document.getElementById('hotel-page').classList.add('active');
+}
+function closeHotelPage(){
+  document.getElementById('hotel-page').classList.remove('active');
+}
+
 function renderHotelPage(){
   const h = currentHotel;
-  // header
-  document.getElementById('hp-name').textContent  = h.name;
-  document.getElementById('hp-city').textContent  = h.city;
-  document.getElementById('hp-stars').textContent = '★'.repeat(h.stars);
-  document.getElementById('hp-rating').textContent= h.rating;
-  document.getElementById('hp-reviews').textContent= h.reviews.toLocaleString()+' reviews';
-  // gallery
+  const sp = searchParams;
+  const nights = calcNights(sp.checkin, sp.checkout) || 1;
+  const dateStr = (sp.checkin && sp.checkout) ? `${sp.checkin} → ${sp.checkout}` : 'Select dates';
+  const guestStr = sp.adults+' Adult'+(sp.adults>1?'s':'')+(sp.children?' · '+sp.children+' Child'+(sp.children>1?'ren':''):'');
+
+  document.getElementById('hp-name').textContent    = h.name;
+  document.getElementById('hp-city').textContent    = h.city;
+  document.getElementById('hp-stars').textContent   = '★'.repeat(h.stars);
+  document.getElementById('hp-rating').textContent  = h.rating;
+  document.getElementById('hp-reviews').textContent = h.reviews.toLocaleString()+' reviews';
+
   document.getElementById('hp-main-img').style.backgroundImage = `url('${h.gallery[0]}')`;
-  const thumbs = document.getElementById('hp-thumbs');
-  thumbs.innerHTML = h.gallery.map((g,i)=>`
+  document.getElementById('hp-thumbs').innerHTML = h.gallery.map((g,i)=>`
     <div class="hp-thumb ${i===0?'active':''}" style="background-image:url('${g}')" onclick="setMainImg('${g}',this)"></div>
   `).join('');
-  // desc
+
   document.getElementById('hp-desc').textContent = h.desc;
-  // amenities
   document.getElementById('hp-amenities').innerHTML = h.amenities.map(a=>`
     <div class="hp-amen-item">
-      <div class="hp-amen-ic">${AMENITY_ICONS[a]||'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="12" r="10"/><polyline points="12 8 12 12 15 14"/></svg>'}</div>
+      <div class="hp-amen-ic">${AMENITY_ICONS[a]||'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="12" r="10"/></svg>'}</div>
       <span>${a}</span>
     </div>
   `).join('');
-  // rooms
+
   document.getElementById('hp-rooms').innerHTML = h.rooms.map(r=>`
     <div class="hp-room">
       <div class="hp-room-img" style="background-image:url('${r.img}')"></div>
@@ -934,38 +1084,60 @@ function renderHotelPage(){
           <span>🛏 ${r.bed}</span>
           <span>🌅 ${r.view}</span>
         </div>
+        <div class="hp-room-total">$${r.price} × ${nights} night${nights>1?'s':''} = <strong>$${r.price*nights}</strong></div>
       </div>
       <div class="hp-room-price">
         <div class="hp-room-amt">$${r.price}</div>
         <div class="hp-room-per">/night</div>
-        <button class="hp-book-btn" onclick="openBooking(${h.id},'${r.type}',${r.price})">Select Room</button>
+        <button class="hp-book-btn" onclick="openBooking(${h.id},'${r.type}',${r.price},${r.price*nights})">Select Room</button>
       </div>
     </div>
   `).join('');
-  // booking summary
+
+  // Sidebar booking card
+  document.getElementById('bs-img').style.backgroundImage = `url('${h.img}')`;
   document.getElementById('bs-hotel').textContent = h.name;
   document.getElementById('bs-city').textContent  = h.city;
-  document.getElementById('bs-when').textContent  = searchParams.when||'—';
-  document.getElementById('bs-who').textContent   = (searchParams.adults||'2')+' Adults · '+(searchParams.children||'0')+' Children';
-  document.getElementById('bs-price').textContent = '$'+h.rooms[0].price;
-  document.getElementById('bs-total').textContent = '$'+h.rooms[0].price;
-  document.getElementById('bs-img').style.backgroundImage = `url('${h.img}')`;
+  document.getElementById('bs-when').textContent  = dateStr;
+  document.getElementById('bs-who').textContent   = guestStr+' · '+sp.rooms+' Room'+(sp.rooms>1?'s':'');
+  document.getElementById('bs-price').textContent = '$'+h.rooms[0].price+'/night';
+  document.getElementById('bs-total').textContent = '$'+(h.rooms[0].price * nights);
+}
+
+function calcNights(ci, co){
+  if(!ci||!co) return 0;
+  const parse = s => { const [d,m,y]=s.split(' '); const months={Jan:0,Feb:1,Mar:2,Apr:3,May:4,Jun:5,Jul:6,Aug:7,Sep:8,Oct:9,Nov:10,Dec:11}; return new Date(y||2026,months[m]||0,+d); };
+  const diff = (parse(co)-parse(ci))/(1000*60*60*24);
+  return Math.max(1,isNaN(diff)?1:diff);
 }
 
 function setMainImg(src, el){
-  document.getElementById('hp-main-img').style.backgroundImage = `url('${src}')`;
+  document.getElementById('hp-main-img').style.backgroundImage=`url('${src}')`;
   document.querySelectorAll('.hp-thumb').forEach(t=>t.classList.remove('active'));
   el.classList.add('active');
 }
 
-function openBooking(hotelId, roomType, price){
-  const h = HOTELS_DATA.find(h=>h.id===hotelId);
+/* ═══════════════════════════════════════════
+   BOOKING MODAL
+═══════════════════════════════════════════ */
+function openBooking(hotelId, roomType, pricePerNight, totalPrice){
+  const h  = HOTELS_DATA.find(h=>h.id===hotelId);
+  const sp = searchParams;
+  const nights = calcNights(sp.checkin, sp.checkout)||1;
+  const dateStr = (sp.checkin&&sp.checkout)?`${sp.checkin} → ${sp.checkout}`:'—';
+  const guestStr = sp.adults+' Adult'+(sp.adults>1?'s':'')+(sp.children?' · '+sp.children+' Child'+(sp.children>1?'ren':''):'');
+
+  // Store pending booking
+  window._pendingBooking = { hotel:h, roomType, pricePerNight, totalPrice:totalPrice||pricePerNight*nights, nights, dateStr, guestStr, sp:{...sp} };
+
   document.getElementById('bk-hotel').textContent  = h.name;
+  document.getElementById('bk-city').textContent   = h.city;
   document.getElementById('bk-room').textContent   = roomType;
-  document.getElementById('bk-when').textContent   = searchParams.when||'—';
-  document.getElementById('bk-who').textContent    = (searchParams.adults||'2')+' Adults';
-  document.getElementById('bk-price').textContent  = '$'+price+' /night';
-  document.getElementById('bk-total').textContent  = '$'+price;
+  document.getElementById('bk-when').textContent   = dateStr;
+  document.getElementById('bk-nights').textContent = nights+' night'+(nights>1?'s':'');
+  document.getElementById('bk-who').textContent    = guestStr;
+  document.getElementById('bk-price').textContent  = '$'+pricePerNight+'/night';
+  document.getElementById('bk-total').textContent  = '$'+(totalPrice||pricePerNight*nights);
   document.getElementById('booking-modal').classList.add('active');
 }
 
@@ -973,7 +1145,104 @@ function closeBooking(){
   document.getElementById('booking-modal').classList.remove('active');
 }
 
+function confirmBooking(){
+  const name  = document.getElementById('bk-inp-name').value.trim();
+  const email = document.getElementById('bk-inp-email').value.trim();
+  const phone = document.getElementById('bk-inp-phone').value.trim();
+  if(!name||!email){ alert('Please fill in your name and email.'); return; }
+
+  const pb = window._pendingBooking;
+  const ref = 'MQ-'+new Date().getFullYear()+'-'+Math.floor(1000+Math.random()*8999);
+
+  confirmedBooking = {
+    ref,
+    travelerName : name,
+    travelerEmail: email,
+    travelerPhone: phone,
+    hotel        : pb.hotel,
+    roomType     : pb.roomType,
+    pricePerNight: pb.pricePerNight,
+    totalPrice   : pb.totalPrice,
+    nights       : pb.nights,
+    dateStr      : pb.dateStr,
+    checkin      : pb.sp.checkin,
+    checkout     : pb.sp.checkout,
+    adults       : pb.sp.adults,
+    children     : pb.sp.children,
+    rooms        : pb.sp.rooms,
+    where        : pb.sp.where || pb.hotel.city,
+    guestStr     : pb.guestStr,
+    bookedAt     : new Date().toLocaleDateString('en-GB',{day:'numeric',month:'short',year:'numeric'}),
+  };
+
+  closeBooking();
+  renderTripPage();
+  document.getElementById('trip-page').classList.add('active');
+  document.body.style.overflow='hidden';
+  // close other pages
+  document.getElementById('hotel-page').classList.remove('active');
+  document.getElementById('search-page').classList.remove('active');
+}
+
+/* ═══════════════════════════════════════════
+   RENDER MY TRIP PAGE — 100% from user data
+═══════════════════════════════════════════ */
+function renderTripPage(){
+  if(!confirmedBooking){
+    document.getElementById('trip-empty').style.display='flex';
+    document.getElementById('trip-content').style.display='none';
+    return;
+  }
+  document.getElementById('trip-empty').style.display='none';
+  document.getElementById('trip-content').style.display='grid';
+
+  const b  = confirmedBooking;
+  const h  = b.hotel;
+
+  // ── Profile (from booking form) ──
+  const initials = b.travelerName.split(' ').map(w=>w[0]).join('').slice(0,2).toUpperCase();
+  document.getElementById('tp-avatar').textContent     = initials;
+  document.getElementById('tp-traveler-name').textContent  = b.travelerName;
+  document.getElementById('tp-traveler-email').textContent = b.travelerEmail;
+  document.getElementById('tp-traveler-phone').textContent = b.travelerPhone||'—';
+
+  // ── Booking hero ──
+  document.getElementById('tp-hotel-img').style.backgroundImage = `url('${h.img}')`;
+  document.getElementById('tp-hotel-name').textContent  = h.name;
+  document.getElementById('tp-hotel-city').textContent  = h.city+' · '+'★'.repeat(h.stars);
+  document.getElementById('tp-ref').textContent         = 'Ref: '+b.ref;
+
+  // ── Detail grid ──
+  document.getElementById('tp-checkin').textContent   = b.checkin  || '—';
+  document.getElementById('tp-checkout').textContent  = b.checkout || '—';
+  document.getElementById('tp-guests').textContent    = b.guestStr;
+  document.getElementById('tp-room').textContent      = b.roomType;
+  document.getElementById('tp-total-paid').textContent= '$'+b.totalPrice;
+  document.getElementById('tp-duration').textContent  = b.nights+' Night'+(b.nights>1?'s':'');
+
+  // ── Trip Summary sidebar ──
+  document.getElementById('ts-destination').textContent = b.where;
+  document.getElementById('ts-dates').textContent       = b.dateStr;
+  document.getElementById('ts-duration').textContent    = b.nights+' Nights / '+(b.nights+1)+' Days';
+  document.getElementById('ts-travelers').textContent   = b.guestStr;
+  document.getElementById('ts-hotel').textContent       = h.name;
+  document.getElementById('ts-room').textContent        = b.roomType;
+  document.getElementById('ts-hotel-cost').textContent  = '$'+b.totalPrice;
+  document.getElementById('ts-grand').textContent       = '$'+b.totalPrice;
+  document.getElementById('ts-map-pin').textContent     = '📍 '+b.where;
+}
+
+// ── My Trip nav link: show empty state if no booking yet ──
+function openTripPage(){
+  renderTripPage();
+  document.getElementById('trip-page').classList.add('active');
+  document.body.style.overflow='hidden';
+}
+
 document.querySelector('.sbtn').addEventListener('click', openSearchPage);
+
+// Init guest button states
+changeGuest('adults',0); changeGuest('children',0); changeGuest('rooms',0);
 </script>
 
 <!-- ══════════ SEARCH RESULTS PAGE ══════════ -->
@@ -1162,19 +1431,22 @@ document.querySelector('.sbtn').addEventListener('click', openSearchPage);
     <div class="bk-modal-title">Complete Your Booking</div>
     <div class="bk-summary">
       <div class="bk-row"><span>Hotel</span><strong id="bk-hotel"></strong></div>
+      <div class="bk-row"><span>City</span><strong id="bk-city"></strong></div>
       <div class="bk-row"><span>Room</span><strong id="bk-room"></strong></div>
       <div class="bk-row"><span>Dates</span><strong id="bk-when"></strong></div>
+      <div class="bk-row"><span>Duration</span><strong id="bk-nights"></strong></div>
       <div class="bk-row"><span>Guests</span><strong id="bk-who"></strong></div>
       <div class="bk-divider"></div>
+      <div class="bk-row"><span>Price/night</span><strong id="bk-price"></strong></div>
       <div class="bk-row bk-total"><span>Total</span><strong id="bk-total" class="bk-price"></strong></div>
     </div>
     <div class="bk-form">
-      <div class="bk-field"><label>Full Name</label><input type="text" placeholder="Ahmed Al-Rashidi"></div>
-      <div class="bk-field"><label>Email</label><input type="email" placeholder="ahmed@example.com"></div>
-      <div class="bk-field"><label>Phone</label><input type="tel" placeholder="+966 5x xxx xxxx"></div>
-      <div class="bk-field"><label>Special Requests</label><textarea rows="2" placeholder="Early check-in, extra pillows…"></textarea></div>
+      <div class="bk-field"><label>Full Name *</label><input id="bk-inp-name" type="text" placeholder="Your full name"></div>
+      <div class="bk-field"><label>Email *</label><input id="bk-inp-email" type="email" placeholder="your@email.com"></div>
+      <div class="bk-field"><label>Phone</label><input id="bk-inp-phone" type="tel" placeholder="+966 5x xxx xxxx"></div>
+      <div class="bk-field"><label>Special Requests</label><textarea id="bk-inp-notes" rows="2" placeholder="Early check-in, extra pillows…"></textarea></div>
     </div>
-    <button class="bk-confirm">Confirm Booking →</button>
+    <button class="bk-confirm" onclick="confirmBooking()">Confirm Booking →</button>
     <div class="bk-secure"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="12" height="12"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg> Secured &amp; Encrypted</div>
   </div>
 </div>
@@ -1411,110 +1683,75 @@ function switchTab(name, btn){
     <div style="width:80px"></div>
   </div>
 
-  <div class="tp-wrap">
+  <!-- EMPTY STATE (shown before any booking) -->
+  <div id="trip-empty" style="display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:60vh;gap:20px;text-align:center;padding:40px;">
+    <div style="font-size:56px;opacity:.4">✈️</div>
+    <div style="font-family:'Cormorant Garamond',serif;font-size:28px;font-weight:300;color:rgba(255,255,255,.6);">No trips booked yet</div>
+    <div style="font-size:13px;color:rgba(255,255,255,.3);max-width:320px;line-height:1.7;">Search for a destination, choose your hotel and room, then confirm your booking — your full trip details will appear here.</div>
+    <button onclick="closePage('trip-page')" style="margin-top:8px;background:var(--gold);border:none;color:var(--navy);font-family:var(--sans);font-size:12px;font-weight:600;padding:11px 24px;border-radius:5px;cursor:pointer;">Search Hotels →</button>
+  </div>
 
-    <!-- ── LEFT COLUMN ── -->
+  <!-- TRIP CONTENT (shown after booking confirmed) -->
+  <div id="trip-content" class="tp-wrap" style="display:none">
+
+    <!-- LEFT COLUMN -->
     <div class="tp-left">
 
       <!-- Traveler Profile -->
       <div class="tp-card">
         <div class="tp-card-header">
           <div class="tp-section-label">Traveler Profile</div>
+          <span class="tp-status tp-status-confirmed">● Confirmed</span>
         </div>
         <div class="tp-profile">
-          <div class="tp-avatar">A</div>
+          <div class="tp-avatar" id="tp-avatar">?</div>
           <div class="tp-profile-info">
-            <div class="tp-profile-name">Ahmed Al-Rashidi</div>
-            <div class="tp-profile-meta">Gold Member · Member since 2022</div>
-            <div class="tp-badges">
-              <span class="tp-badge tp-badge-gold">⭐ Gold</span>
-              <span class="tp-badge">✈ 14 Trips</span>
-              <span class="tp-badge">🏨 28 Nights</span>
-            </div>
+            <div class="tp-profile-name" id="tp-traveler-name">—</div>
+            <div class="tp-profile-meta" id="tp-traveler-email" style="margin-bottom:4px">—</div>
+            <div class="tp-profile-meta" id="tp-traveler-phone">—</div>
           </div>
-          <div class="tp-loyalty">
-            <div class="tp-loyalty-pts">4,820</div>
-            <div class="tp-loyalty-lbl">Points</div>
-          </div>
-        </div>
-        <div class="tp-progress-wrap">
-          <div class="tp-progress-label">
-            <span>Gold → Platinum</span>
-            <span>4,820 / 10,000 pts</span>
-          </div>
-          <div class="tp-progress-bar"><div class="tp-progress-fill" style="width:48%"></div></div>
         </div>
       </div>
 
-      <!-- Active Booking -->
+      <!-- Upcoming Booking -->
       <div class="tp-card">
         <div class="tp-card-header">
           <div class="tp-section-label">Upcoming Trip</div>
           <span class="tp-status tp-status-confirmed">● Confirmed</span>
         </div>
-        <div class="tp-booking-hero" style="background-image:url('https://images.unsplash.com/photo-1566073771259-6a8506099945?w=800&q=80')">
+        <div class="tp-booking-hero" id="tp-hotel-img">
           <div class="tp-booking-ov"></div>
           <div class="tp-booking-info">
-            <div class="tp-booking-name">The Ritz-Carlton</div>
-            <div class="tp-booking-city">Dubai, UAE · 5★</div>
+            <div class="tp-booking-name" id="tp-hotel-name">—</div>
+            <div class="tp-booking-city" id="tp-hotel-city">—</div>
           </div>
-          <div class="tp-booking-ref">Ref: MQ-2025-8841</div>
+          <div class="tp-booking-ref" id="tp-ref">—</div>
         </div>
         <div class="tp-booking-details">
           <div class="tp-detail-grid">
             <div class="tp-detail-item">
-              <div class="tp-detail-icon">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
-              </div>
-              <div>
-                <div class="tp-detail-label">Check-in</div>
-                <div class="tp-detail-val">20 Mar 2026</div>
-              </div>
+              <div class="tp-detail-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg></div>
+              <div><div class="tp-detail-label">Check-in</div><div class="tp-detail-val" id="tp-checkin">—</div></div>
             </div>
             <div class="tp-detail-item">
-              <div class="tp-detail-icon">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
-              </div>
-              <div>
-                <div class="tp-detail-label">Check-out</div>
-                <div class="tp-detail-val">25 Mar 2026</div>
-              </div>
+              <div class="tp-detail-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg></div>
+              <div><div class="tp-detail-label">Check-out</div><div class="tp-detail-val" id="tp-checkout">—</div></div>
             </div>
             <div class="tp-detail-item">
-              <div class="tp-detail-icon">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>
-              </div>
-              <div>
-                <div class="tp-detail-label">Guests</div>
-                <div class="tp-detail-val">2 Adults · 1 Child</div>
-              </div>
+              <div class="tp-detail-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/></svg></div>
+              <div><div class="tp-detail-label">Guests</div><div class="tp-detail-val" id="tp-guests">—</div></div>
             </div>
             <div class="tp-detail-item">
-              <div class="tp-detail-icon">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
-              </div>
-              <div>
-                <div class="tp-detail-label">Room</div>
-                <div class="tp-detail-val">Premier Sea View</div>
-              </div>
+              <div class="tp-detail-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/></svg></div>
+              <div><div class="tp-detail-label">Room</div><div class="tp-detail-val" id="tp-room">—</div></div>
             </div>
             <div class="tp-detail-item">
-              <div class="tp-detail-icon">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6"/></svg>
-              </div>
-              <div>
-                <div class="tp-detail-label">Total Paid</div>
-                <div class="tp-detail-val tp-gold">$2,800</div>
-              </div>
+              <div class="tp-detail-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6"/></svg></div>
+              <div><div class="tp-detail-label">Total Paid</div><div class="tp-detail-val tp-gold" id="tp-total-paid">—</div></div>
             </div>
             <div class="tp-detail-item">
-              <div class="tp-detail-icon">
-                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
-              </div>
-              <div>
-                <div class="tp-detail-label">Duration</div>
-                <div class="tp-detail-val">5 Nights</div>
-              </div>
+              <div class="tp-detail-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg></div>
+              <div><div class="tp-detail-label">Duration</div><div class="tp-detail-val" id="tp-duration">—</div></div>
             </div>
           </div>
         </div>
@@ -1534,187 +1771,28 @@ function switchTab(name, btn){
         </div>
       </div>
 
-      <!-- Flight Info -->
-      <div class="tp-card">
-        <div class="tp-card-header">
-          <div class="tp-section-label">Flight Details</div>
-          <span class="tp-status tp-status-info">✈ Added</span>
-        </div>
-        <div class="tp-flight">
-          <div class="tp-flight-seg">
-            <div class="tp-flight-time">
-              <div class="tp-ftime">06:30</div>
-              <div class="tp-fcity">RUH</div>
-              <div class="tp-fdate">20 Mar</div>
-            </div>
-            <div class="tp-flight-line">
-              <div class="tp-fline-dot"></div>
-              <div class="tp-fline-track">
-                <div class="tp-fline-duration">2h 15m · Direct</div>
-              </div>
-              <div class="tp-fline-dot"></div>
-            </div>
-            <div class="tp-flight-time tp-flight-time-r">
-              <div class="tp-ftime">08:45</div>
-              <div class="tp-fcity">DXB</div>
-              <div class="tp-fdate">20 Mar</div>
-            </div>
-          </div>
-          <div class="tp-flight-meta">
-            <span>✈ Saudia · SV-565</span>
-            <span>Economy · Seat 14A</span>
-            <span>PNR: XKMT82</span>
-          </div>
-        </div>
-        <div class="tp-flight" style="margin-top:12px; padding-top:12px; border-top:1px solid var(--line);">
-          <div class="tp-flight-seg">
-            <div class="tp-flight-time">
-              <div class="tp-ftime">18:00</div>
-              <div class="tp-fcity">DXB</div>
-              <div class="tp-fdate">25 Mar</div>
-            </div>
-            <div class="tp-flight-line">
-              <div class="tp-fline-dot"></div>
-              <div class="tp-fline-track">
-                <div class="tp-fline-duration">2h 10m · Direct</div>
-              </div>
-              <div class="tp-fline-dot"></div>
-            </div>
-            <div class="tp-flight-time tp-flight-time-r">
-              <div class="tp-ftime">20:10</div>
-              <div class="tp-fcity">RUH</div>
-              <div class="tp-fdate">25 Mar</div>
-            </div>
-          </div>
-          <div class="tp-flight-meta">
-            <span>✈ Saudia · SV-566</span>
-            <span>Economy · Seat 12C</span>
-            <span>PNR: XKMT83</span>
-          </div>
-        </div>
-      </div>
-
-      <!-- Itinerary -->
-      <div class="tp-card">
-        <div class="tp-card-header">
-          <div class="tp-section-label">Daily Itinerary</div>
-        </div>
-        <div class="tp-itinerary">
-          <div class="tp-itin-day">
-            <div class="tp-itin-date-col">
-              <div class="tp-itin-day-num">20</div>
-              <div class="tp-itin-month">MAR</div>
-              <div class="tp-itin-line"></div>
-            </div>
-            <div class="tp-itin-events">
-              <div class="tp-event tp-event-flight">
-                <div class="tp-event-icon">✈</div>
-                <div><div class="tp-event-title">Depart Riyadh → Dubai</div><div class="tp-event-sub">06:30 · Saudia SV-565</div></div>
-              </div>
-              <div class="tp-event tp-event-hotel">
-                <div class="tp-event-icon">🏨</div>
-                <div><div class="tp-event-title">Check-in: The Ritz-Carlton Dubai</div><div class="tp-event-sub">From 15:00 · Premier Sea View</div></div>
-              </div>
-              <div class="tp-event tp-event-activity">
-                <div class="tp-event-icon">🍽</div>
-                <div><div class="tp-event-title">Welcome Dinner</div><div class="tp-event-sub">La Baie Restaurant · 20:00</div></div>
-              </div>
-            </div>
-          </div>
-          <div class="tp-itin-day">
-            <div class="tp-itin-date-col">
-              <div class="tp-itin-day-num">21</div>
-              <div class="tp-itin-month">MAR</div>
-              <div class="tp-itin-line"></div>
-            </div>
-            <div class="tp-itin-events">
-              <div class="tp-event tp-event-activity">
-                <div class="tp-event-icon">🏖</div>
-                <div><div class="tp-event-title">Private Beach & Pool Day</div><div class="tp-event-sub">Hotel Amenities · All Day</div></div>
-              </div>
-              <div class="tp-event tp-event-activity">
-                <div class="tp-event-icon">🛍</div>
-                <div><div class="tp-event-title">Dubai Mall Shopping</div><div class="tp-event-sub">Shuttle available · 14:00</div></div>
-              </div>
-              <div class="tp-event tp-event-activity">
-                <div class="tp-event-icon">🌆</div>
-                <div><div class="tp-event-title">Burj Khalifa At the Top</div><div class="tp-event-sub">Sunset Visit · 18:30</div></div>
-              </div>
-            </div>
-          </div>
-          <div class="tp-itin-day">
-            <div class="tp-itin-date-col">
-              <div class="tp-itin-day-num">22</div>
-              <div class="tp-itin-month">MAR</div>
-              <div class="tp-itin-line"></div>
-            </div>
-            <div class="tp-itin-events">
-              <div class="tp-event tp-event-activity">
-                <div class="tp-event-icon">🏜</div>
-                <div><div class="tp-event-title">Desert Safari</div><div class="tp-event-sub">Dune bashing + BBQ Dinner · 15:00</div></div>
-              </div>
-              <div class="tp-event tp-event-activity">
-                <div class="tp-event-icon">💆</div>
-                <div><div class="tp-event-title">Ritz-Carlton Spa</div><div class="tp-event-sub">2hr Couples Massage · 11:00</div></div>
-              </div>
-            </div>
-          </div>
-          <div class="tp-itin-day">
-            <div class="tp-itin-date-col">
-              <div class="tp-itin-day-num">25</div>
-              <div class="tp-itin-month">MAR</div>
-            </div>
-            <div class="tp-itin-events">
-              <div class="tp-event tp-event-hotel">
-                <div class="tp-event-icon">🏨</div>
-                <div><div class="tp-event-title">Check-out</div><div class="tp-event-sub">By 12:00 · Late checkout available</div></div>
-              </div>
-              <div class="tp-event tp-event-flight">
-                <div class="tp-event-icon">✈</div>
-                <div><div class="tp-event-title">Return Dubai → Riyadh</div><div class="tp-event-sub">18:00 · Saudia SV-566</div></div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-
     </div>
 
-    <!-- ── RIGHT COLUMN ── -->
+    <!-- RIGHT COLUMN -->
     <div class="tp-right">
 
       <!-- Trip Summary -->
       <div class="tp-card">
         <div class="tp-section-label" style="margin-bottom:16px">Trip Summary</div>
-        <div class="tp-summary-map" style="background-image:url('https://images.unsplash.com/photo-1512453979798-5ea266f8880c?w=600&q=80')">
-          <div class="tp-map-pin">📍 Dubai, UAE</div>
+        <div class="tp-summary-map">
+          <div class="tp-map-pin" id="ts-map-pin">📍</div>
         </div>
         <div class="tp-summary-rows">
-          <div class="tp-sum-row"><span>Destination</span><strong>Dubai, UAE 🇦🇪</strong></div>
-          <div class="tp-sum-row"><span>Trip Dates</span><strong>20 – 25 Mar 2026</strong></div>
-          <div class="tp-sum-row"><span>Duration</span><strong>5 Nights / 6 Days</strong></div>
-          <div class="tp-sum-row"><span>Travelers</span><strong>2 Adults · 1 Child</strong></div>
-          <div class="tp-sum-row"><span>Hotel</span><strong>The Ritz-Carlton</strong></div>
-          <div class="tp-sum-row"><span>Room Type</span><strong>Premier Sea View</strong></div>
+          <div class="tp-sum-row"><span>Destination</span><strong id="ts-destination">—</strong></div>
+          <div class="tp-sum-row"><span>Trip Dates</span><strong id="ts-dates">—</strong></div>
+          <div class="tp-sum-row"><span>Duration</span><strong id="ts-duration">—</strong></div>
+          <div class="tp-sum-row"><span>Travelers</span><strong id="ts-travelers">—</strong></div>
+          <div class="tp-sum-row"><span>Hotel</span><strong id="ts-hotel">—</strong></div>
+          <div class="tp-sum-row"><span>Room Type</span><strong id="ts-room">—</strong></div>
           <div class="tp-sum-divider"></div>
-          <div class="tp-sum-row"><span>Hotel Cost</span><strong>$2,800</strong></div>
-          <div class="tp-sum-row"><span>Flights</span><strong>$680</strong></div>
-          <div class="tp-sum-row"><span>Activities</span><strong>$340</strong></div>
+          <div class="tp-sum-row"><span>Hotel Cost</span><strong id="ts-hotel-cost">—</strong></div>
           <div class="tp-sum-divider"></div>
-          <div class="tp-sum-row tp-sum-total"><span>Total Trip Cost</span><strong class="tp-gold">$3,820</strong></div>
-        </div>
-      </div>
-
-      <!-- Weather -->
-      <div class="tp-card">
-        <div class="tp-section-label" style="margin-bottom:14px">Weather Forecast</div>
-        <div class="tp-weather-city">Dubai, UAE</div>
-        <div class="tp-weather-days">
-          <div class="tp-wday"><div class="tp-wday-name">Thu</div><div class="tp-wday-icon">☀️</div><div class="tp-wday-temp">32°</div></div>
-          <div class="tp-wday"><div class="tp-wday-name">Fri</div><div class="tp-wday-icon">🌤</div><div class="tp-wday-temp">30°</div></div>
-          <div class="tp-wday"><div class="tp-wday-name">Sat</div><div class="tp-wday-icon">☀️</div><div class="tp-wday-temp">33°</div></div>
-          <div class="tp-wday"><div class="tp-wday-name">Sun</div><div class="tp-wday-icon">☀️</div><div class="tp-wday-temp">34°</div></div>
-          <div class="tp-wday"><div class="tp-wday-name">Mon</div><div class="tp-wday-icon">🌤</div><div class="tp-wday-temp">31°</div></div>
+          <div class="tp-sum-row tp-sum-total"><span>Total Trip Cost</span><strong class="tp-gold" id="ts-grand">—</strong></div>
         </div>
       </div>
 
@@ -1722,65 +1800,18 @@ function switchTab(name, btn){
       <div class="tp-card">
         <div class="tp-card-header">
           <div class="tp-section-label">Packing Checklist</div>
-          <span class="tp-check-progress">6/10</span>
         </div>
         <div class="tp-checklist">
-          <label class="tp-check-item"><input type="checkbox" checked> Passport & ID</label>
-          <label class="tp-check-item"><input type="checkbox" checked> Hotel Voucher</label>
-          <label class="tp-check-item"><input type="checkbox" checked> Flight Tickets</label>
-          <label class="tp-check-item"><input type="checkbox" checked> Travel Insurance</label>
-          <label class="tp-check-item"><input type="checkbox" checked> Power Adapter</label>
-          <label class="tp-check-item"><input type="checkbox" checked> Sunscreen SPF50+</label>
-          <label class="tp-check-item"><input type="checkbox"> Formal Attire (Dinner)</label>
+          <label class="tp-check-item"><input type="checkbox"> Passport &amp; ID</label>
+          <label class="tp-check-item"><input type="checkbox"> Hotel Voucher</label>
+          <label class="tp-check-item"><input type="checkbox"> Flight Tickets</label>
+          <label class="tp-check-item"><input type="checkbox"> Travel Insurance</label>
+          <label class="tp-check-item"><input type="checkbox"> Power Adapter</label>
+          <label class="tp-check-item"><input type="checkbox"> Sunscreen SPF50+</label>
           <label class="tp-check-item"><input type="checkbox"> Swimwear</label>
-          <label class="tp-check-item"><input type="checkbox"> UAE Dirhams (AED)</label>
+          <label class="tp-check-item"><input type="checkbox"> Formal Attire</label>
+          <label class="tp-check-item"><input type="checkbox"> Local Currency</label>
           <label class="tp-check-item"><input type="checkbox"> Camera</label>
-        </div>
-      </div>
-
-      <!-- Emergency Contacts -->
-      <div class="tp-card">
-        <div class="tp-section-label" style="margin-bottom:14px">Emergency Contacts</div>
-        <div class="tp-contacts">
-          <div class="tp-contact"><div class="tp-contact-ic">🏨</div><div><div class="tp-contact-name">Ritz-Carlton Dubai</div><div class="tp-contact-val">+971 4 399 4000</div></div></div>
-          <div class="tp-contact"><div class="tp-contact-ic">✈</div><div><div class="tp-contact-name">Saudia Airlines</div><div class="tp-contact-val">+966 920 022 222</div></div></div>
-          <div class="tp-contact"><div class="tp-contact-ic">🆘</div><div><div class="tp-contact-name">UAE Emergency</div><div class="tp-contact-val">999</div></div></div>
-          <div class="tp-contact"><div class="tp-contact-ic">🏥</div><div><div class="tp-contact-name">Saudi Embassy Dubai</div><div class="tp-contact-val">+971 4 397 9999</div></div></div>
-          <div class="tp-contact"><div class="tp-contact-ic">💳</div><div><div class="tp-contact-name">MacQueen Support</div><div class="tp-contact-val">+966 800 123 4567</div></div></div>
-        </div>
-      </div>
-
-      <!-- Past Trips -->
-      <div class="tp-card">
-        <div class="tp-section-label" style="margin-bottom:14px">Past Trips</div>
-        <div class="tp-past-trips">
-          <div class="tp-past-trip">
-            <div class="tp-past-img" style="background-image:url('https://images.unsplash.com/photo-1502602898657-3e91760cbb34?w=300&q=80')"></div>
-            <div class="tp-past-info">
-              <div class="tp-past-name">Hotel Plaza Athenée</div>
-              <div class="tp-past-city">Paris, France · Jan 2026</div>
-              <div class="tp-past-stars">★★★★★</div>
-            </div>
-            <div class="tp-past-pts">+320 pts</div>
-          </div>
-          <div class="tp-past-trip">
-            <div class="tp-past-img" style="background-image:url('https://images.unsplash.com/photo-1524231757912-21f4fe3a7200?w=300&q=80')"></div>
-            <div class="tp-past-info">
-              <div class="tp-past-name">Four Seasons Bosphorus</div>
-              <div class="tp-past-city">Istanbul, Turkey · Oct 2025</div>
-              <div class="tp-past-stars">★★★★★</div>
-            </div>
-            <div class="tp-past-pts">+280 pts</div>
-          </div>
-          <div class="tp-past-trip">
-            <div class="tp-past-img" style="background-image:url('https://images.unsplash.com/photo-1559827260-dc66d52bef19?w=300&q=80')"></div>
-            <div class="tp-past-info">
-              <div class="tp-past-name">W Doha Hotel</div>
-              <div class="tp-past-city">Doha, Qatar · Aug 2025</div>
-              <div class="tp-past-stars">★★★★★</div>
-            </div>
-            <div class="tp-past-pts">+210 pts</div>
-          </div>
         </div>
       </div>
 
