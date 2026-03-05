@@ -1048,7 +1048,10 @@ function handleRoute(){
   }
 
   // ── My Trip ──
-  if(hash === '#my-trip'){
+  if(hash.startsWith('#my-trip')){
+    const qs     = hash.includes('?') ? hash.split('?')[1] : '';
+    const params = Object.fromEntries(new URLSearchParams(qs));
+    if(params.hotel) confirmedBooking = buildBookingFromParams(params);
     renderTripPage();
     showPage('trip-page');
     return;
@@ -1138,15 +1141,35 @@ function renderSearchPage(){
    SELECT HOTEL → go straight to My Trip
 ═══════════════════════════════════════════ */
 function selectHotelAndGo(id){
-  const h   = HOTELS_DATA.find(h=>h.id===id);
-  const sp  = searchParams;
-  const nights = calcNights(sp.checkin, sp.checkout) || 1;
-  const dateStr  = (sp.checkin&&sp.checkout) ? `${sp.checkin} → ${sp.checkout}` : '—';
-  const guestStr = sp.adults+' Adult'+(sp.adults>1?'s':'')+(sp.children?' · '+sp.children+' Child'+(sp.children>1?'ren':''):'');
-  const ref = 'MQ-'+new Date().getFullYear()+'-'+Math.floor(1000+Math.random()*8999);
+  const sp = searchParams;
+  const qs = new URLSearchParams({
+    hotel   : id,
+    checkin : sp.checkin  || '',
+    checkout: sp.checkout || '',
+    adults  : sp.adults,
+    children: sp.children,
+    rooms   : sp.rooms,
+    where   : sp.where || '',
+  }).toString();
+  navigate('#my-trip?' + qs);
+}
 
-  confirmedBooking = {
-    ref,
+function buildBookingFromParams(params){
+  const h = HOTELS_DATA.find(h => h.id === +params.hotel);
+  if(!h) return null;
+  const sp = {
+    checkin : params.checkin  || '',
+    checkout: params.checkout || '',
+    adults  : +params.adults  || 2,
+    children: +params.children|| 0,
+    rooms   : +params.rooms   || 1,
+    where   : params.where    || h.city,
+  };
+  const nights   = calcNights(sp.checkin, sp.checkout) || 1;
+  const dateStr  = (sp.checkin && sp.checkout) ? `${sp.checkin} → ${sp.checkout}` : '—';
+  const guestStr = sp.adults+' Adult'+(sp.adults>1?'s':'')+(sp.children?' · '+sp.children+' Child'+(sp.children>1?'ren':''):'');
+  return {
+    ref          : 'MQ-'+new Date().getFullYear()+'-'+Math.floor(1000+Math.random()*8999),
     travelerName : '',
     travelerEmail: '',
     travelerPhone: '',
@@ -1161,12 +1184,10 @@ function selectHotelAndGo(id){
     adults       : sp.adults,
     children     : sp.children,
     rooms        : sp.rooms,
-    where        : sp.where || h.city,
+    where        : sp.where,
     guestStr,
     bookedAt     : new Date().toLocaleDateString('en-GB',{day:'numeric',month:'short',year:'numeric'}),
   };
-
-  navigate('#my-trip');
 }
 
 /* ═══════════════════════════════════════════
