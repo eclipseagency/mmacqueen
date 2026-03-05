@@ -339,10 +339,10 @@ footer{background:var(--navy);border-top:1px solid var(--line);padding:72px 0 36
     <span style="display:none;font-family:'Cormorant Garamond',serif;font-size:22px;color:white;letter-spacing:.04em;">Mac<span style="color:#c8a356">Queen</span></span>
   </a>
   <div class="nav-r">
-    <button class="pill" onclick="document.getElementById('trip-page').classList.add('active');document.body.style.overflow='hidden'">
+    <a href="#" class="pill" onclick="event.preventDefault();document.getElementById('trip-page').classList.add('active');document.body.style.overflow='hidden'">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="13" height="13"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
       My Trip
-    </button>
+    </a>
     <button class="pill"><img src="https://flagcdn.com/us.svg" alt=""> English</button>
     <button class="pill">$ (USD) ▾</button>
     <button class="pill pill-cta">Sign In</button>
