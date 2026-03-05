@@ -368,7 +368,7 @@ footer{background:var(--navy);border-top:1px solid var(--line);padding:72px 0 36
     <span style="display:none;font-family:'Cormorant Garamond',serif;font-size:22px;color:white;letter-spacing:.04em;">Mac<span style="color:#c8a356">Queen</span></span>
   </a>
   <div class="nav-r">
-    <a href="#" class="pill" onclick="event.preventDefault();openTripPage()">
+    <a href="#my-trip" class="pill">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="13" height="13"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
       My Trip
     </a>
@@ -1103,7 +1103,7 @@ function renderSearchPage(){
 
   const grid = document.getElementById('results-grid');
   grid.innerHTML = HOTELS_DATA.map(h=>`
-    <div class="rc" onclick="selectHotelAndGo(${h.id})" style="cursor:pointer">
+    <a class="rc" href="#hotel/${h.id}">
       <div class="rc-img" style="background-image:url('${h.img}')">
         ${h.badge?`<div class="rc-badge">${h.badge}</div>`:''}
         <div class="rc-save"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 000-7.78z"/></svg></div>
@@ -1130,7 +1130,7 @@ function renderSearchPage(){
           <span style="font-size:11px;color:var(--gold);font-weight:500;letter-spacing:.06em;">TAP TO BOOK → MY TRIP</span>
         </div>
       </div>
-    </div>
+    </a>
   `).join('');
 }
 
@@ -1684,7 +1684,7 @@ changeGuest('adults',0); changeGuest('children',0); changeGuest('rooms',0);
 .results-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:16px;}
 
 /* ── Result card ── */
-.rc{background:var(--navy2);border:1px solid var(--line);border-radius:8px;overflow:hidden;cursor:pointer;transition:transform .3s,box-shadow .3s;}
+.rc{background:var(--navy2);border:1px solid var(--line);border-radius:8px;overflow:hidden;cursor:pointer;transition:transform .3s,box-shadow .3s;text-decoration:none;color:inherit;display:block;}
 .rc:hover{transform:translateY(-4px);box-shadow:0 16px 40px rgba(0,0,0,.4);}
 .rc-img{height:180px;position:relative;background-size:cover;background-position:center;}
 .rc-badge{position:absolute;top:10px;left:10px;background:var(--gold);color:var(--navy);font-size:9px;font-weight:600;letter-spacing:.14em;text-transform:uppercase;padding:3px 9px;border-radius:2px;}
