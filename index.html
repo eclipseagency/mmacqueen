@@ -113,6 +113,7 @@ nav.scrolled{background:rgba(7,17,31,.98);}
   box-shadow:0 8px 40px rgba(0,0,0,.28),0 0 0 1px rgba(0,0,0,.06);
   position:relative;
   margin:0 auto;
+  clip-path:none;
 }
 .sf{flex:1;padding:14px 18px;border-right:1px solid rgba(0,0,0,.08);display:flex;flex-direction:column;gap:3px;cursor:pointer;transition:background .18s;position:relative;}
 .sf:hover{background:#f5f7fc;}
@@ -170,7 +171,7 @@ nav.scrolled{background:rgba(7,17,31,.98);}
   position:absolute;top:calc(100% + 10px);left:0;
   background:white;border-radius:8px;
   box-shadow:0 20px 60px rgba(0,0,0,.25),0 0 0 1px rgba(0,0,0,.06);
-  padding:20px;z-index:600;display:none;
+  padding:20px;z-index:800;display:none;
   min-width:580px;
 }
 .cal-popup.show{display:flex;gap:20px;}
@@ -335,7 +336,7 @@ footer{background:var(--navy);border-top:1px solid var(--line);padding:72px 0 36
 .rv.in{opacity:1;transform:translateY(0);}
 
 /* ── OVERLAY ── */
-#overlay{position:fixed;inset:0;z-index:400;display:none;}
+#overlay{position:fixed;inset:0;z-index:400;display:none;background:transparent;}
 #overlay.show{display:block;}
 
 @media(max-width:900px){
@@ -397,11 +398,11 @@ footer{background:var(--navy);border-top:1px solid var(--line);padding:72px 0 36
     <div class="search-wrap">
       <div class="sbox" id="sbox">
         <!-- WHERE -->
-        <div class="sf" id="sf-where" onclick="document.getElementById('where-input').focus()">
+        <div class="sf" id="sf-where" onclick="document.getElementById('where-input').focus();event.stopPropagation()">
           <span class="sf-lbl">Where?</span>
-          <input id="where-input" class="sf-input" type="text" placeholder="City or hotel name…" autocomplete="off">
+          <input id="where-input" class="sf-input" type="text" placeholder="City or hotel name…" autocomplete="off" onclick="event.stopPropagation()">
           <!-- Suggestions dropdown -->
-          <div class="where-suggestions" id="where-suggestions"></div>
+          <div class="where-suggestions" id="where-suggestions" onclick="event.stopPropagation()"></div>
         </div>
         <!-- CHECK-IN / CHECK-OUT -->
         <div class="sf" id="sf-checkin">
@@ -685,90 +686,132 @@ const DAYS=['Su','Mo','Tu','We','Th','Fr','Sa'];
 let calState={open:false,leftYear:0,leftMonth:0,startDate:null,endDate:null,selecting:false};
 const today=new Date();today.setHours(0,0,0,0);
 
-function initCal(){calState.leftYear=today.getFullYear();calState.leftMonth=today.getMonth();renderCal();}
-
-function renderCal(){
-  document.getElementById('cal-left').innerHTML=buildMonth(calState.leftYear,calState.leftMonth,true);
-  const rDate=new Date(calState.leftYear,calState.leftMonth+1,1);
-  document.getElementById('cal-right').innerHTML=buildMonth(rDate.getFullYear(),rDate.getMonth(),false);
-  const footer=`<div class="cal-footer" style="grid-column:1/-1"><button class="cal-clear" onclick="clearDates()">Clear</button><button class="cal-apply" onclick="applyDates()">Apply</button></div>`;
-  document.getElementById('cal-right').insertAdjacentHTML('beforeend',footer);
+function initCal(){
+  calState.leftYear  = today.getFullYear();
+  calState.leftMonth = today.getMonth();
+  // don't render yet — will render when user opens the calendar
 }
 
-function buildMonth(year,month,isLeft){
-  const firstDay=new Date(year,month,1).getDay();
-  const daysInMonth=new Date(year,month+1,0).getDate();
-  let html=`<div class="cal-month-header">`;
-  if(isLeft){html+=`<button class="cal-nav" onclick="navMonth(-1)"><svg viewBox="0 0 24 24"><polyline points="15 18 9 12 15 6"/></svg></button>`;}
-  else{html+=`<div style="width:28px"></div>`;}
-  html+=`<div class="cal-month-name">${MONTHS[month]} ${year}</div>`;
-  if(!isLeft){html+=`<button class="cal-nav" onclick="navMonth(1)"><svg viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"/></svg></button>`;}
-  else{html+=`<div style="width:28px"></div>`;}
-  html+=`</div><div class="cal-grid">`;
-  DAYS.forEach(d=>html+=`<div class="cal-dow">${d}</div>`);
-  for(let i=0;i<firstDay;i++) html+=`<div class="cal-day empty"></div>`;
-  for(let d=1;d<=daysInMonth;d++){
-    const date=new Date(year,month,d);
-    let cls='cal-day';
-    if(date<today) cls+=' past';
-    if(date.getTime()===today.getTime()) cls+=' today';
-    if(calState.startDate&&date.getTime()===calState.startDate.getTime()) cls+=' range-start';
-    else if(calState.endDate&&date.getTime()===calState.endDate.getTime()) cls+=' range-end';
-    else if(calState.startDate&&calState.endDate&&date>calState.startDate&&date<calState.endDate) cls+=' in-range';
-    html+=`<div class="${cls}" onclick="selectDay(${year},${month},${d})">${d}</div>`;
+function renderCal(){
+  const rDate = new Date(calState.leftYear, calState.leftMonth + 1, 1);
+  document.getElementById('cal-left').innerHTML  = buildMonth(calState.leftYear, calState.leftMonth, true);
+  document.getElementById('cal-right').innerHTML = buildMonth(rDate.getFullYear(), rDate.getMonth(), false);
+  // footer — appended to cal-right only once per render
+  document.getElementById('cal-right').insertAdjacentHTML('beforeend',
+    `<div class="cal-footer"><button class="cal-clear" onclick="clearDates()">Clear</button><button class="cal-apply" onclick="applyDates()">Apply</button></div>`
+  );
+}
+
+function buildMonth(year, month, isLeft){
+  const firstDay    = new Date(year, month, 1).getDay();
+  const daysInMonth = new Date(year, month + 1, 0).getDate();
+  let html = `<div class="cal-month-header">`;
+  html += isLeft
+    ? `<button class="cal-nav" onclick="navMonth(-1);event.stopPropagation()"><svg viewBox="0 0 24 24"><polyline points="15 18 9 12 15 6"/></svg></button>`
+    : `<div style="width:28px"></div>`;
+  html += `<div class="cal-month-name">${MONTHS[month]} ${year}</div>`;
+  html += !isLeft
+    ? `<button class="cal-nav" onclick="navMonth(1);event.stopPropagation()"><svg viewBox="0 0 24 24"><polyline points="9 18 15 12 9 6"/></svg></button>`
+    : `<div style="width:28px"></div>`;
+  html += `</div><div class="cal-grid">`;
+  DAYS.forEach(d => html += `<div class="cal-dow">${d}</div>`);
+  for(let i = 0; i < firstDay; i++) html += `<div class="cal-day empty"></div>`;
+  for(let d = 1; d <= daysInMonth; d++){
+    const date = new Date(year, month, d);
+    const ts   = date.getTime();
+    let cls = 'cal-day';
+    if(date < today)                                                           cls += ' past';
+    if(ts === today.getTime())                                                 cls += ' today';
+    if(calState.startDate && ts === calState.startDate.getTime())              cls += ' range-start';
+    else if(calState.endDate && ts === calState.endDate.getTime())             cls += ' range-end';
+    else if(calState.startDate && calState.endDate && date > calState.startDate && date < calState.endDate) cls += ' in-range';
+    html += `<div class="${cls}" onclick="selectDay(${year},${month},${d});event.stopPropagation()">${d}</div>`;
   }
-  html+=`</div>`;
+  html += `</div>`;
   return html;
 }
 
 function navMonth(dir){
-  calState.leftMonth+=dir;
-  if(calState.leftMonth>11){calState.leftMonth=0;calState.leftYear++;}
-  if(calState.leftMonth<0){calState.leftMonth=11;calState.leftYear--;}
+  calState.leftMonth += dir;
+  if(calState.leftMonth > 11){ calState.leftMonth = 0;  calState.leftYear++; }
+  if(calState.leftMonth < 0) { calState.leftMonth = 11; calState.leftYear--; }
   renderCal();
 }
 
-function selectDay(y,m,d){
-  const date=new Date(y,m,d);
-  if(!calState.startDate||calState.endDate||(date<calState.startDate)){calState.startDate=date;calState.endDate=null;calState.selecting=true;}
-  else{calState.endDate=date;calState.selecting=false;}
-  renderCal();updateSearchDates();
+function selectDay(y, m, d){
+  const date = new Date(y, m, d);
+  if(!calState.startDate || calState.endDate || date < calState.startDate){
+    calState.startDate = date;
+    calState.endDate   = null;
+  } else {
+    calState.endDate = date;
+  }
+  renderCal();
+  updateSearchDates();
 }
 
 function updateSearchDates(){
-  const fmt=dt=>dt?`${dt.getDate()} ${MONTHS[dt.getMonth()].slice(0,3)} ${dt.getFullYear()}`:'Add dates';
-  const checkinEl = document.getElementById('val-checkin');
+  const fmt = dt => dt ? `${dt.getDate()} ${MONTHS[dt.getMonth()].slice(0,3)} ${dt.getFullYear()}` : '';
+  const el  = document.getElementById('val-checkin');
   if(calState.startDate && calState.endDate){
-    checkinEl.textContent = `${fmt(calState.startDate)} - ${fmt(calState.endDate).split(' ').slice(0,2).join(' ')}`;
+    const ciStr = fmt(calState.startDate);
+    const coStr = fmt(calState.endDate);
+    el.textContent = `${ciStr} → ${coStr}`;
+    searchParams.checkin  = ciStr;
+    searchParams.checkout = coStr;
+    // also keep legacy globals for date math
+    window._checkinDate  = ciStr;
+    window._checkoutDate = coStr;
   } else if(calState.startDate){
-    checkinEl.textContent = fmt(calState.startDate) + ' - Add checkout';
+    el.textContent = fmt(calState.startDate) + ' → ?';
+    searchParams.checkin  = fmt(calState.startDate);
+    searchParams.checkout = '';
   } else {
-    checkinEl.textContent = 'Add dates';
+    el.textContent = 'Add dates';
+    searchParams.checkin  = '';
+    searchParams.checkout = '';
   }
 }
 
-function clearDates(){calState.startDate=null;calState.endDate=null;renderCal();updateSearchDates();}
-function applyDates(){closeCal();}
+function clearDates(){
+  calState.startDate = null;
+  calState.endDate   = null;
+  renderCal();
+  updateSearchDates();
+}
+
+function applyDates(){
+  if(calState.startDate && calState.endDate) closeCal();
+}
 
 function openCal(){
-  const popup=document.getElementById('cal-checkin');
-  const overlay=document.getElementById('overlay');
-  if(popup.classList.contains('show')){closeCal();return;}
-  popup.classList.add('show');overlay.classList.add('show');
+  const popup   = document.getElementById('cal-checkin');
+  const overlay = document.getElementById('overlay');
+  if(popup.classList.contains('show')){ closeCal(); return; }
+  renderCal();
+  popup.classList.add('show');
+  overlay.classList.add('show');
   document.getElementById('sf-checkin').classList.add('active');
-  document.getElementById('sf-checkout').classList.add('active');
 }
 
 function closeCal(){
   document.getElementById('cal-checkin').classList.remove('show');
   document.getElementById('overlay').classList.remove('show');
   document.getElementById('sf-checkin').classList.remove('active');
-  document.getElementById('sf-checkout').classList.remove('active');
 }
 
-document.getElementById('overlay').addEventListener('click',closeCal);
-document.getElementById('sf-checkin').addEventListener('click',e=>{e.stopPropagation();openCal();});
-document.getElementById('cal-checkin').addEventListener('click',e=>e.stopPropagation());
+document.getElementById('overlay').addEventListener('click', closeCal);
+
+// sf-checkin: click on the field itself (not inside popup) toggles calendar
+document.getElementById('sf-checkin').addEventListener('click', e => {
+  // if click came from inside the popup, ignore
+  if(e.target.closest('.cal-popup')) return;
+  e.stopPropagation();
+  openCal();
+});
+
+// prevent clicks inside popup from closing it
+document.getElementById('cal-checkin').addEventListener('click', e => e.stopPropagation());
 
 /* ── COUNTER ── */
 function animateCounter(el){
@@ -913,13 +956,14 @@ const DESTINATIONS = [
 const whereInput = document.getElementById('where-input');
 const suggestionsBox = document.getElementById('where-suggestions');
 
-whereInput.addEventListener('input', () => {
+whereInput.addEventListener('input', e => {
+  e.stopPropagation();
   const q = whereInput.value.trim().toLowerCase();
   if(!q){ suggestionsBox.classList.remove('show'); return; }
   const matches = DESTINATIONS.filter(d => d.name.toLowerCase().startsWith(q) || d.country.toLowerCase().includes(q));
   if(!matches.length){ suggestionsBox.classList.remove('show'); return; }
   suggestionsBox.innerHTML = matches.map(d => `
-    <div class="ws-item" onclick="selectDestination('${d.name}','${d.country}')">
+    <div class="ws-item" onclick="selectDestination('${d.name}','${d.country}');event.stopPropagation()">
       <div class="ws-icon">${d.icon}</div>
       <div><div class="ws-name">${d.name}</div><div class="ws-country">${d.country}</div></div>
     </div>
@@ -927,16 +971,15 @@ whereInput.addEventListener('input', () => {
   suggestionsBox.classList.add('show');
 });
 
-whereInput.addEventListener('focus', () => {
-  if(!whereInput.value){
-    suggestionsBox.innerHTML = DESTINATIONS.slice(0,6).map(d=>`
-      <div class="ws-item" onclick="selectDestination('${d.name}','${d.country}')">
-        <div class="ws-icon">${d.icon}</div>
-        <div><div class="ws-name">${d.name}</div><div class="ws-country">${d.country}</div></div>
-      </div>
-    `).join('');
-    suggestionsBox.classList.add('show');
-  }
+whereInput.addEventListener('focus', e => {
+  e.stopPropagation();
+  suggestionsBox.innerHTML = DESTINATIONS.slice(0,6).map(d=>`
+    <div class="ws-item" onclick="selectDestination('${d.name}','${d.country}');event.stopPropagation()">
+      <div class="ws-icon">${d.icon}</div>
+      <div><div class="ws-name">${d.name}</div><div class="ws-country">${d.country}</div></div>
+    </div>
+  `).join('');
+  suggestionsBox.classList.add('show');
 });
 
 document.addEventListener('click', e => {
@@ -978,37 +1021,89 @@ function changeGuest(type, delta){
 }
 
 /* ═══════════════════════════════════════════
-   OPEN SEARCH
+   HASH ROUTER
 ═══════════════════════════════════════════ */
-function openSearchPage(){
-  searchParams.where    = whereInput.value.trim() || 'All Destinations';
-  searchParams.checkin  = window._checkinDate  || '';
-  searchParams.checkout = window._checkoutDate || '';
-  renderSearchPage();
-  document.getElementById('search-page').classList.add('active');
-  document.getElementById('hotel-page').classList.remove('active');
-  document.body.style.overflow='hidden';
+function navigate(hash){
+  window.location.hash = hash;
 }
 
-function closePage(id){
-  document.getElementById(id).classList.remove('active');
-  document.body.style.overflow='';
+function showPage(id){
+  ['search-page','hotel-page','trip-page'].forEach(p => {
+    const el = document.getElementById(p);
+    if(el) el.classList.remove('active');
+  });
+  document.body.style.overflow = '';
+  if(id){
+    const el = document.getElementById(id);
+    if(el){ el.classList.add('active'); document.body.style.overflow='hidden'; }
+  }
 }
+
+function handleRoute(){
+  const hash = window.location.hash;
+
+  // ── Home ──
+  if(!hash || hash === '#'){
+    showPage(null); return;
+  }
+
+  // ── My Trip ──
+  if(hash === '#my-trip'){
+    renderTripPage();
+    showPage('trip-page');
+    return;
+  }
+
+  // ── Hotel → straight to My Trip ──
+  if(hash.startsWith('#hotel/')){
+    const id = parseInt(hash.split('/')[1]);
+    selectHotelAndGo(id);
+    return;
+  }
+
+  // ── Search: #search?where=Dubai&... ──
+  if(hash.startsWith('#search')){
+    const qs = hash.includes('?') ? hash.split('?')[1] : '';
+    const params = Object.fromEntries(new URLSearchParams(qs));
+    if(params.where)    { searchParams.where    = params.where;    whereInput.value = params.where; }
+    if(params.checkin)  { searchParams.checkin  = params.checkin;  }
+    if(params.checkout) { searchParams.checkout = params.checkout; }
+    if(params.adults)   { searchParams.adults   = +params.adults;  }
+    if(params.children) { searchParams.children = +params.children;}
+    if(params.rooms)    { searchParams.rooms    = +params.rooms;   }
+    // sync guest display
+    document.getElementById('val-adults').textContent   = searchParams.adults;
+    document.getElementById('val-children').textContent = searchParams.children;
+    document.getElementById('val-rooms').textContent    = searchParams.rooms;
+    document.getElementById('gp-adults').textContent    = searchParams.adults;
+    document.getElementById('gp-children').textContent  = searchParams.children;
+    document.getElementById('gp-rooms').textContent     = searchParams.rooms;
+    // sync date display
+    if(searchParams.checkin && searchParams.checkout){
+      document.getElementById('val-checkin').textContent = `${searchParams.checkin} → ${searchParams.checkout}`;
+    }
+    renderSearchPage();
+    showPage('search-page'); return;
+  }
+}
+
+window.addEventListener('hashchange', handleRoute);
+window.addEventListener('load', handleRoute);
 
 /* ═══════════════════════════════════════════
    RENDER SEARCH RESULTS
 ═══════════════════════════════════════════ */
 function renderSearchPage(){
   const sp = searchParams;
-  const dateStr = (sp.checkin && sp.checkout) ? `${sp.checkin} → ${sp.checkout}` : 'Flexible dates';
+  const dateStr  = (sp.checkin && sp.checkout) ? `${sp.checkin} → ${sp.checkout}` : 'Flexible dates';
   const guestStr = sp.adults+' Adult'+(sp.adults>1?'s':'')+(sp.children?' · '+sp.children+' Child'+(sp.children>1?'ren':''):'');
-  document.getElementById('sp-where').textContent = sp.where;
+  document.getElementById('sp-where').textContent = sp.where || 'All Destinations';
   document.getElementById('sp-when').textContent  = dateStr;
   document.getElementById('sp-who').textContent   = guestStr+' · '+sp.rooms+' Room'+(sp.rooms>1?'s':'');
 
   const grid = document.getElementById('results-grid');
   grid.innerHTML = HOTELS_DATA.map(h=>`
-    <div class="rc" onclick="openHotelPage(${h.id})">
+    <div class="rc" onclick="selectHotelAndGo(${h.id})" style="cursor:pointer">
       <div class="rc-img" style="background-image:url('${h.img}')">
         ${h.badge?`<div class="rc-badge">${h.badge}</div>`:''}
         <div class="rc-save"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 000-7.78z"/></svg></div>
@@ -1031,28 +1126,57 @@ function renderSearchPage(){
             <div class="rc-price">$${h.price}<span class="rc-night">/night</span></div>
           </div>
         </div>
+        <div style="margin-top:10px;padding-top:10px;border-top:1px solid rgba(200,163,86,.15);text-align:center;">
+          <span style="font-size:11px;color:var(--gold);font-weight:500;letter-spacing:.06em;">TAP TO BOOK → MY TRIP</span>
+        </div>
       </div>
     </div>
   `).join('');
 }
 
 /* ═══════════════════════════════════════════
-   HOTEL DETAIL PAGE
+   SELECT HOTEL → go straight to My Trip
 ═══════════════════════════════════════════ */
-function openHotelPage(id){
-  currentHotel = HOTELS_DATA.find(h=>h.id===id);
-  renderHotelPage();
-  document.getElementById('hotel-page').classList.add('active');
-}
-function closeHotelPage(){
-  document.getElementById('hotel-page').classList.remove('active');
+function selectHotelAndGo(id){
+  const h   = HOTELS_DATA.find(h=>h.id===id);
+  const sp  = searchParams;
+  const nights = calcNights(sp.checkin, sp.checkout) || 1;
+  const dateStr  = (sp.checkin&&sp.checkout) ? `${sp.checkin} → ${sp.checkout}` : '—';
+  const guestStr = sp.adults+' Adult'+(sp.adults>1?'s':'')+(sp.children?' · '+sp.children+' Child'+(sp.children>1?'ren':''):'');
+  const ref = 'MQ-'+new Date().getFullYear()+'-'+Math.floor(1000+Math.random()*8999);
+
+  confirmedBooking = {
+    ref,
+    travelerName : '',
+    travelerEmail: '',
+    travelerPhone: '',
+    hotel        : h,
+    roomType     : h.rooms[0].type,
+    pricePerNight: h.rooms[0].price,
+    totalPrice   : h.rooms[0].price * nights,
+    nights,
+    dateStr,
+    checkin      : sp.checkin,
+    checkout     : sp.checkout,
+    adults       : sp.adults,
+    children     : sp.children,
+    rooms        : sp.rooms,
+    where        : sp.where || h.city,
+    guestStr,
+    bookedAt     : new Date().toLocaleDateString('en-GB',{day:'numeric',month:'short',year:'numeric'}),
+  };
+
+  navigate('#my-trip');
 }
 
+/* ═══════════════════════════════════════════
+   HOTEL DETAIL PAGE (kept for #hotel/ route)
+═══════════════════════════════════════════ */
 function renderHotelPage(){
-  const h = currentHotel;
+  const h  = currentHotel;
   const sp = searchParams;
-  const nights = calcNights(sp.checkin, sp.checkout) || 1;
-  const dateStr = (sp.checkin && sp.checkout) ? `${sp.checkin} → ${sp.checkout}` : 'Select dates';
+  const nights   = calcNights(sp.checkin, sp.checkout) || 1;
+  const dateStr  = (sp.checkin && sp.checkout) ? `${sp.checkin} → ${sp.checkout}` : 'Select dates';
   const guestStr = sp.adults+' Adult'+(sp.adults>1?'s':'')+(sp.children?' · '+sp.children+' Child'+(sp.children>1?'ren':''):'');
 
   document.getElementById('hp-name').textContent    = h.name;
@@ -1094,7 +1218,6 @@ function renderHotelPage(){
     </div>
   `).join('');
 
-  // Sidebar booking card
   document.getElementById('bs-img').style.backgroundImage = `url('${h.img}')`;
   document.getElementById('bs-hotel').textContent = h.name;
   document.getElementById('bs-city').textContent  = h.city;
@@ -1106,9 +1229,13 @@ function renderHotelPage(){
 
 function calcNights(ci, co){
   if(!ci||!co) return 0;
-  const parse = s => { const [d,m,y]=s.split(' '); const months={Jan:0,Feb:1,Mar:2,Apr:3,May:4,Jun:5,Jul:6,Aug:7,Sep:8,Oct:9,Nov:10,Dec:11}; return new Date(y||2026,months[m]||0,+d); };
+  const parse = s => {
+    const [d,m,y] = s.split(' ');
+    const months = {Jan:0,Feb:1,Mar:2,Apr:3,May:4,Jun:5,Jul:6,Aug:7,Sep:8,Oct:9,Nov:10,Dec:11};
+    return new Date(y||2026, months[m]||0, +d);
+  };
   const diff = (parse(co)-parse(ci))/(1000*60*60*24);
-  return Math.max(1,isNaN(diff)?1:diff);
+  return Math.max(1, isNaN(diff)?1:diff);
 }
 
 function setMainImg(src, el){
@@ -1118,16 +1245,15 @@ function setMainImg(src, el){
 }
 
 /* ═══════════════════════════════════════════
-   BOOKING MODAL
+   BOOKING MODAL (kept for hotel detail page)
 ═══════════════════════════════════════════ */
 function openBooking(hotelId, roomType, pricePerNight, totalPrice){
-  const h  = HOTELS_DATA.find(h=>h.id===hotelId);
-  const sp = searchParams;
+  const h      = HOTELS_DATA.find(h=>h.id===hotelId);
+  const sp     = searchParams;
   const nights = calcNights(sp.checkin, sp.checkout)||1;
-  const dateStr = (sp.checkin&&sp.checkout)?`${sp.checkin} → ${sp.checkout}`:'—';
+  const dateStr  = (sp.checkin&&sp.checkout)?`${sp.checkin} → ${sp.checkout}`:'—';
   const guestStr = sp.adults+' Adult'+(sp.adults>1?'s':'')+(sp.children?' · '+sp.children+' Child'+(sp.children>1?'ren':''):'');
 
-  // Store pending booking
   window._pendingBooking = { hotel:h, roomType, pricePerNight, totalPrice:totalPrice||pricePerNight*nights, nights, dateStr, guestStr, sp:{...sp} };
 
   document.getElementById('bk-hotel').textContent  = h.name;
@@ -1145,13 +1271,112 @@ function closeBooking(){
   document.getElementById('booking-modal').classList.remove('active');
 }
 
+/* ═══════════════════════════════════════════
+   RENDER MY TRIP PAGE
+═══════════════════════════════════════════ */
+function renderTripPage(){
+  if(!confirmedBooking){
+    document.getElementById('trip-empty').style.display  = 'flex';
+    document.getElementById('trip-content').style.display= 'none';
+    return;
+  }
+  document.getElementById('trip-empty').style.display  = 'none';
+  document.getElementById('trip-content').style.display= 'grid';
+
+  const b = confirmedBooking;
+  const h = b.hotel;
+
+  const initials = b.travelerName
+    ? b.travelerName.split(' ').map(w=>w[0]).join('').slice(0,2).toUpperCase()
+    : h.name.slice(0,2).toUpperCase();
+
+  document.getElementById('tp-avatar').textContent          = initials;
+  document.getElementById('tp-traveler-name').textContent   = b.travelerName  || h.name+' Guest';
+  document.getElementById('tp-traveler-email').textContent  = b.travelerEmail || '—';
+  document.getElementById('tp-traveler-phone').textContent  = b.travelerPhone || '—';
+
+  document.getElementById('tp-hotel-img').style.backgroundImage = `url('${h.img}')`;
+  document.getElementById('tp-hotel-name').textContent = h.name;
+  document.getElementById('tp-hotel-city').textContent = h.city+' · '+'★'.repeat(h.stars);
+  document.getElementById('tp-ref').textContent        = 'Ref: '+b.ref;
+
+  document.getElementById('tp-checkin').textContent    = b.checkin   || '—';
+  document.getElementById('tp-checkout').textContent   = b.checkout  || '—';
+  document.getElementById('tp-guests').textContent     = b.guestStr;
+  document.getElementById('tp-room').textContent       = b.roomType;
+  document.getElementById('tp-total-paid').textContent = '$'+b.totalPrice;
+  document.getElementById('tp-duration').textContent   = b.nights+' Night'+(b.nights>1?'s':'');
+
+  document.getElementById('ts-destination').textContent = b.where;
+  document.getElementById('ts-dates').textContent       = b.dateStr;
+  document.getElementById('ts-duration').textContent    = b.nights+' Nights / '+(b.nights+1)+' Days';
+  document.getElementById('ts-travelers').textContent   = b.guestStr;
+  document.getElementById('ts-hotel').textContent       = h.name;
+  document.getElementById('ts-room').textContent        = b.roomType;
+  document.getElementById('ts-hotel-cost').textContent  = '$'+b.totalPrice;
+  document.getElementById('ts-grand').textContent       = '$'+b.totalPrice;
+  document.getElementById('ts-map-pin').textContent     = '📍 '+b.where;
+}
+
+
+/* ═══════════════════════════════════════════
+   OPEN SEARCH  →  navigate to hash
+═══════════════════════════════════════════ */
+function openSearchPage(){
+  searchParams.where    = whereInput.value.trim() || 'All Destinations';
+  searchParams.checkin  = searchParams.checkin  || '';
+  searchParams.checkout = searchParams.checkout || '';
+  const qs = new URLSearchParams({
+    where   : searchParams.where,
+    checkin : searchParams.checkin,
+    checkout: searchParams.checkout,
+    adults  : searchParams.adults,
+    children: searchParams.children,
+    rooms   : searchParams.rooms,
+  }).toString();
+  navigate(`#search?${qs}`);
+}
+
+function closePage(id){
+  navigate('');
+}
+
+/* ═══════════════════════════════════════════
+   HOTEL DETAIL  →  navigate to hash
+═══════════════════════════════════════════ */
+function openHotelPage(id){
+  navigate(`#hotel/${id}`);
+}
+function closeHotelPage(){
+  // go back to search if we have search params, else home
+  const qs = new URLSearchParams({
+    where   : searchParams.where||'',
+    checkin : searchParams.checkin||'',
+    checkout: searchParams.checkout||'',
+    adults  : searchParams.adults,
+    children: searchParams.children,
+    rooms   : searchParams.rooms,
+  }).toString();
+  navigate(`#search?${qs}`);
+}
+
+/* ═══════════════════════════════════════════
+   MY TRIP  →  navigate to hash
+═══════════════════════════════════════════ */
+function openTripPage(){
+  navigate('#my-trip');
+}
+
+/* ═══════════════════════════════════════════
+   CONFIRM BOOKING  →  navigate to my-trip
+═══════════════════════════════════════════ */
 function confirmBooking(){
   const name  = document.getElementById('bk-inp-name').value.trim();
   const email = document.getElementById('bk-inp-email').value.trim();
   const phone = document.getElementById('bk-inp-phone').value.trim();
   if(!name||!email){ alert('Please fill in your name and email.'); return; }
 
-  const pb = window._pendingBooking;
+  const pb  = window._pendingBooking;
   const ref = 'MQ-'+new Date().getFullYear()+'-'+Math.floor(1000+Math.random()*8999);
 
   confirmedBooking = {
@@ -1176,67 +1401,7 @@ function confirmBooking(){
   };
 
   closeBooking();
-  renderTripPage();
-  document.getElementById('trip-page').classList.add('active');
-  document.body.style.overflow='hidden';
-  // close other pages
-  document.getElementById('hotel-page').classList.remove('active');
-  document.getElementById('search-page').classList.remove('active');
-}
-
-/* ═══════════════════════════════════════════
-   RENDER MY TRIP PAGE — 100% from user data
-═══════════════════════════════════════════ */
-function renderTripPage(){
-  if(!confirmedBooking){
-    document.getElementById('trip-empty').style.display='flex';
-    document.getElementById('trip-content').style.display='none';
-    return;
-  }
-  document.getElementById('trip-empty').style.display='none';
-  document.getElementById('trip-content').style.display='grid';
-
-  const b  = confirmedBooking;
-  const h  = b.hotel;
-
-  // ── Profile (from booking form) ──
-  const initials = b.travelerName.split(' ').map(w=>w[0]).join('').slice(0,2).toUpperCase();
-  document.getElementById('tp-avatar').textContent     = initials;
-  document.getElementById('tp-traveler-name').textContent  = b.travelerName;
-  document.getElementById('tp-traveler-email').textContent = b.travelerEmail;
-  document.getElementById('tp-traveler-phone').textContent = b.travelerPhone||'—';
-
-  // ── Booking hero ──
-  document.getElementById('tp-hotel-img').style.backgroundImage = `url('${h.img}')`;
-  document.getElementById('tp-hotel-name').textContent  = h.name;
-  document.getElementById('tp-hotel-city').textContent  = h.city+' · '+'★'.repeat(h.stars);
-  document.getElementById('tp-ref').textContent         = 'Ref: '+b.ref;
-
-  // ── Detail grid ──
-  document.getElementById('tp-checkin').textContent   = b.checkin  || '—';
-  document.getElementById('tp-checkout').textContent  = b.checkout || '—';
-  document.getElementById('tp-guests').textContent    = b.guestStr;
-  document.getElementById('tp-room').textContent      = b.roomType;
-  document.getElementById('tp-total-paid').textContent= '$'+b.totalPrice;
-  document.getElementById('tp-duration').textContent  = b.nights+' Night'+(b.nights>1?'s':'');
-
-  // ── Trip Summary sidebar ──
-  document.getElementById('ts-destination').textContent = b.where;
-  document.getElementById('ts-dates').textContent       = b.dateStr;
-  document.getElementById('ts-duration').textContent    = b.nights+' Nights / '+(b.nights+1)+' Days';
-  document.getElementById('ts-travelers').textContent   = b.guestStr;
-  document.getElementById('ts-hotel').textContent       = h.name;
-  document.getElementById('ts-room').textContent        = b.roomType;
-  document.getElementById('ts-hotel-cost').textContent  = '$'+b.totalPrice;
-  document.getElementById('ts-grand').textContent       = '$'+b.totalPrice;
-  document.getElementById('ts-map-pin').textContent     = '📍 '+b.where;
-}
-
-// ── My Trip nav link: show empty state if no booking yet ──
-function openTripPage(){
-  renderTripPage();
-  document.getElementById('trip-page').classList.add('active');
-  document.body.style.overflow='hidden';
+  navigate('#my-trip');
 }
 
 document.querySelector('.sbtn').addEventListener('click', openSearchPage);
