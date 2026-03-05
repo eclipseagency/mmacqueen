@@ -339,6 +339,10 @@ footer{background:var(--navy);border-top:1px solid var(--line);padding:72px 0 36
     <span style="display:none;font-family:'Cormorant Garamond',serif;font-size:22px;color:white;letter-spacing:.04em;">Mac<span style="color:#c8a356">Queen</span></span>
   </a>
   <div class="nav-r">
+    <button class="pill" onclick="document.getElementById('trip-page').classList.add('active');document.body.style.overflow='hidden'">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="13" height="13"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+      My Trip
+    </button>
     <button class="pill"><img src="https://flagcdn.com/us.svg" alt=""> English</button>
     <button class="pill">$ (USD) ▾</button>
     <button class="pill pill-cta">Sign In</button>
@@ -739,6 +743,1195 @@ const counterObs = new IntersectionObserver(entries => {
 document.querySelectorAll('.st').forEach(el => counterObs.observe(el));
 
 initCal();
+
+/* ══════════════════════════════════════
+   TRIP / SEARCH RESULTS PAGE
+══════════════════════════════════════ */
+
+// ── Sample hotel data ──
+const HOTELS_DATA = [
+  {
+    id:1, name:'The Ritz-Carlton', city:'Dubai, UAE',
+    img:'https://images.unsplash.com/photo-1566073771259-6a8506099945?w=600&q=80',
+    stars:5, rating:9.4, reviews:1280, price:420,
+    badge:'Best Value',
+    amenities:['Pool','Spa','Gym','Restaurant','Free WiFi','Parking','Room Service','Concierge'],
+    desc:'Nestled in the heart of Dubai, The Ritz-Carlton offers unrivaled luxury with panoramic views of the Arabian Gulf. Guests enjoy world-class dining, a private beach, and the iconic Ritz-Carlton spa.',
+    gallery:[
+      'https://images.unsplash.com/photo-1582719508461-905c673771fd?w=800&q=80',
+      'https://images.unsplash.com/photo-1571896349842-33c89424de2d?w=800&q=80',
+      'https://images.unsplash.com/photo-1578683010236-d716f9a3f461?w=800&q=80',
+      'https://images.unsplash.com/photo-1520250497591-112f2f40a3f4?w=800&q=80',
+    ],
+    rooms:[
+      {type:'Deluxe Room',size:'48 m²',bed:'King Bed',view:'City View',price:420,img:'https://images.unsplash.com/photo-1631049307264-da0ec9d70304?w=400&q=80'},
+      {type:'Premier Room',size:'58 m²',bed:'King Bed',view:'Sea View',price:560,img:'https://images.unsplash.com/photo-1616594039964-ae9021a400a0?w=400&q=80'},
+      {type:'Club Suite',size:'95 m²',bed:'King Bed',view:'Gulf View',price:820,img:'https://images.unsplash.com/photo-1618773928121-c32242e63f39?w=400&q=80'},
+    ]
+  },
+  {
+    id:2, name:'Burj Al Arab Jumeirah', city:'Dubai, UAE',
+    img:'https://images.unsplash.com/photo-1512453979798-5ea266f8880c?w=600&q=80',
+    stars:5, rating:9.8, reviews:3450, price:890,
+    badge:'Iconic',
+    amenities:['Private Beach','Helipad','Butler Service','Pool','Spa','Fine Dining','Free WiFi','Limo Transfer'],
+    desc:'The world\'s most luxurious hotel. Every suite in the Burj Al Arab is a two-floor duplex, with a private butler who is on call 24 hours a day.',
+    gallery:[
+      'https://images.unsplash.com/photo-1548574505-5e239809ee19?w=800&q=80',
+      'https://images.unsplash.com/photo-1544124499-58912cbddaad?w=800&q=80',
+      'https://images.unsplash.com/photo-1551882547-ff40c63fe5fa?w=800&q=80',
+      'https://images.unsplash.com/photo-1445019980597-93fa8acb246c?w=800&q=80',
+    ],
+    rooms:[
+      {type:'Deluxe Suite',size:'170 m²',bed:'King Bed',view:'Arabian Gulf',price:890,img:'https://images.unsplash.com/photo-1631049307264-da0ec9d70304?w=400&q=80'},
+      {type:'Sky Suite',size:'240 m²',bed:'King Bed',view:'Panoramic',price:1450,img:'https://images.unsplash.com/photo-1616594039964-ae9021a400a0?w=400&q=80'},
+    ]
+  },
+  {
+    id:3, name:'Atlantis The Palm', city:'Dubai, UAE',
+    img:'https://images.unsplash.com/photo-1542314831-068cd1dbfeeb?w=600&q=80',
+    stars:5, rating:8.9, reviews:5670, price:320,
+    badge:'Family Pick',
+    amenities:['Aquaventure Waterpark','Private Beach','Dolphin Bay','Pool','Spa','20+ Restaurants','Free WiFi','Kids Club'],
+    desc:'A destination within a destination. Atlantis The Palm sits at the apex of the iconic Palm Jumeirah and offers an unparalleled resort experience.',
+    gallery:[
+      'https://images.unsplash.com/photo-1520250497591-112f2f40a3f4?w=800&q=80',
+      'https://images.unsplash.com/photo-1571003123894-1f0594d2b5d9?w=800&q=80',
+      'https://images.unsplash.com/photo-1578683010236-d716f9a3f461?w=800&q=80',
+      'https://images.unsplash.com/photo-1582719508461-905c673771fd?w=800&q=80',
+    ],
+    rooms:[
+      {type:'Superior Room',size:'40 m²',bed:'Twin Beds',view:'Garden',price:320,img:'https://images.unsplash.com/photo-1631049307264-da0ec9d70304?w=400&q=80'},
+      {type:'Palm View Room',size:'52 m²',bed:'King Bed',view:'Palm View',price:420,img:'https://images.unsplash.com/photo-1616594039964-ae9021a400a0?w=400&q=80'},
+      {type:'Signature Suite',size:'110 m²',bed:'King Bed',view:'Sea View',price:680,img:'https://images.unsplash.com/photo-1618773928121-c32242e63f39?w=400&q=80'},
+    ]
+  },
+];
+
+const AMENITY_ICONS = {
+  'Pool':'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M2 12c1.5-2 3.5-2 5 0s3.5 2 5 0 3.5-2 5 0"/><path d="M2 17c1.5-2 3.5-2 5 0s3.5 2 5 0 3.5-2 5 0"/><circle cx="12" cy="6" r="2"/><line x1="12" y1="8" x2="12" y2="10"/></svg>',
+  'Spa':'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M12 2C6.5 2 2 6.5 2 12s4.5 10 10 10 10-4.5 10-10S17.5 2 12 2z"/><path d="M12 8c0 0-4 3-4 6s4 4 4 4 4-1 4-4-4-6-4-6z"/></svg>',
+  'Gym':'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M6 4v16M18 4v16M2 9h4M18 9h4M2 15h4M18 15h4M6 9h12M6 15h12"/></svg>',
+  'Restaurant':'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M3 2v7c0 1.1.9 2 2 2h4a2 2 0 002-2V2M7 2v20M21 15V2a5 5 0 00-5 5v6h3.5a1.5 1.5 0 011.5 1.5v.5M16 22v-6"/></svg>',
+  'Free WiFi':'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M5 12.55a11 11 0 0114.08 0M1.42 9a16 16 0 0121.16 0M8.53 16.11a6 6 0 016.95 0M12 20h.01"/></svg>',
+  'Parking':'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M9 17V7h4a3 3 0 010 6H9"/></svg>',
+  'Room Service':'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M3 17h18M3 11a9 9 0 0118 0M12 2v3"/></svg>',
+  'Concierge':'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/></svg>',
+  'Private Beach':'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M17 20H2M22 20h-2M12 3c0 0-6 5-6 10h12c0-5-6-10-6-10z"/><path d="M12 13v7"/></svg>',
+  'Butler Service':'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="7" r="4"/><path d="M5.5 20H18.5M8 20l1-6h6l1 6"/></svg>',
+  'Fine Dining':'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M3 2v7c0 1.1.9 2 2 2h4a2 2 0 002-2V2M7 2v20M21 15V2a5 5 0 00-5 5v6h3.5a1.5 1.5 0 011.5 1.5v.5"/></svg>',
+  'Limo Transfer':'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M5 17H3a2 2 0 01-2-2V5a2 2 0 012-2h11l4 4v6M16 17h2M7 17h6"/><circle cx="7.5" cy="17.5" r="2.5"/><circle cx="17.5" cy="17.5" r="2.5"/></svg>',
+  'Helipad':'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="12" r="10"/><path d="M7 8v8M17 8v8M7 12h10"/></svg>',
+  'Kids Club':'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75"/></svg>',
+  'Aquaventure Waterpark':'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M2 12c1.5-2 3.5-2 5 0s3.5 2 5 0 3.5-2 5 0"/><path d="M12 3c0 0 3 4 3 8"/><path d="M9 3c0 0-3 4-3 8"/></svg>',
+  'Dolphin Bay':'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M2 12c2-4 6-5 8-3s6 1 8-3c0 3-1 7-4 9l-2-2-2 2c-3-2-4-6-8-3z"/></svg>',
+  '20+ Restaurants':'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M3 2v7c0 1.1.9 2 2 2h4a2 2 0 002-2V2M7 2v20M21 15V2a5 5 0 00-5 5v6h3.5"/></svg>',
+};
+
+let currentHotel = null;
+let searchParams  = {};
+
+// ── Open search results page ──
+function openSearchPage(){
+  searchParams = {
+    where   : document.getElementById('val-where').textContent,
+    when    : document.getElementById('val-checkin').textContent,
+    adults  : document.getElementById('val-adults').textContent,
+    children: document.getElementById('val-children').textContent,
+  };
+  renderSearchPage();
+  document.getElementById('search-page').classList.add('active');
+  document.getElementById('hotel-page').classList.remove('active');
+  document.body.style.overflow='hidden';
+}
+
+// ── Close pages ──
+function closePage(id){
+  document.getElementById(id).classList.remove('active');
+  document.body.style.overflow='';
+}
+
+// ── Open hotel detail ──
+function openHotelPage(id){
+  currentHotel = HOTELS_DATA.find(h=>h.id===id);
+  renderHotelPage();
+  document.getElementById('hotel-page').classList.add('active');
+}
+
+function closeHotelPage(){
+  document.getElementById('hotel-page').classList.remove('active');
+}
+
+// ── Render search results ──
+function renderSearchPage(){
+  const sp = searchParams;
+  document.getElementById('sp-where').textContent = sp.where==='Add destinations'?'All Destinations':sp.where;
+  document.getElementById('sp-when').textContent  = sp.when==='Add dates'?'Flexible dates':sp.when;
+  document.getElementById('sp-who').textContent   = sp.adults+' Adults · '+sp.children+' Children';
+
+  const grid = document.getElementById('results-grid');
+  grid.innerHTML = HOTELS_DATA.map(h=>`
+    <div class="rc" onclick="openHotelPage(${h.id})">
+      <div class="rc-img" style="background-image:url('${h.img}')">
+        ${h.badge?`<div class="rc-badge">${h.badge}</div>`:''}
+        <div class="rc-save"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M20.84 4.61a5.5 5.5 0 00-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 00-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 000-7.78z"/></svg></div>
+      </div>
+      <div class="rc-body">
+        <div class="rc-loc">${h.city}</div>
+        <div class="rc-name">${h.name}</div>
+        <div class="rc-stars">${'★'.repeat(h.stars)}</div>
+        <div class="rc-amen">
+          ${h.amenities.slice(0,4).map(a=>`<span class="rc-amen-tag">${a}</span>`).join('')}
+          ${h.amenities.length>4?`<span class="rc-amen-more">+${h.amenities.length-4}</span>`:''}
+        </div>
+        <div class="rc-foot">
+          <div class="rc-rating-wrap">
+            <div class="rc-rating">${h.rating}</div>
+            <div class="rc-reviews">${h.reviews.toLocaleString()} reviews</div>
+          </div>
+          <div>
+            <div class="rc-from-lbl">From</div>
+            <div class="rc-price">$${h.price}<span class="rc-night">/night</span></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  `).join('');
+}
+
+// ── Render hotel detail ──
+function renderHotelPage(){
+  const h = currentHotel;
+  // header
+  document.getElementById('hp-name').textContent  = h.name;
+  document.getElementById('hp-city').textContent  = h.city;
+  document.getElementById('hp-stars').textContent = '★'.repeat(h.stars);
+  document.getElementById('hp-rating').textContent= h.rating;
+  document.getElementById('hp-reviews').textContent= h.reviews.toLocaleString()+' reviews';
+  // gallery
+  document.getElementById('hp-main-img').style.backgroundImage = `url('${h.gallery[0]}')`;
+  const thumbs = document.getElementById('hp-thumbs');
+  thumbs.innerHTML = h.gallery.map((g,i)=>`
+    <div class="hp-thumb ${i===0?'active':''}" style="background-image:url('${g}')" onclick="setMainImg('${g}',this)"></div>
+  `).join('');
+  // desc
+  document.getElementById('hp-desc').textContent = h.desc;
+  // amenities
+  document.getElementById('hp-amenities').innerHTML = h.amenities.map(a=>`
+    <div class="hp-amen-item">
+      <div class="hp-amen-ic">${AMENITY_ICONS[a]||'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="12" r="10"/><polyline points="12 8 12 12 15 14"/></svg>'}</div>
+      <span>${a}</span>
+    </div>
+  `).join('');
+  // rooms
+  document.getElementById('hp-rooms').innerHTML = h.rooms.map(r=>`
+    <div class="hp-room">
+      <div class="hp-room-img" style="background-image:url('${r.img}')"></div>
+      <div class="hp-room-body">
+        <div class="hp-room-type">${r.type}</div>
+        <div class="hp-room-meta">
+          <span>📐 ${r.size}</span>
+          <span>🛏 ${r.bed}</span>
+          <span>🌅 ${r.view}</span>
+        </div>
+      </div>
+      <div class="hp-room-price">
+        <div class="hp-room-amt">$${r.price}</div>
+        <div class="hp-room-per">/night</div>
+        <button class="hp-book-btn" onclick="openBooking(${h.id},'${r.type}',${r.price})">Select Room</button>
+      </div>
+    </div>
+  `).join('');
+  // booking summary
+  document.getElementById('bs-hotel').textContent = h.name;
+  document.getElementById('bs-city').textContent  = h.city;
+  document.getElementById('bs-when').textContent  = searchParams.when||'—';
+  document.getElementById('bs-who').textContent   = (searchParams.adults||'2')+' Adults · '+(searchParams.children||'0')+' Children';
+  document.getElementById('bs-price').textContent = '$'+h.rooms[0].price;
+  document.getElementById('bs-total').textContent = '$'+h.rooms[0].price;
+  document.getElementById('bs-img').style.backgroundImage = `url('${h.img}')`;
+}
+
+function setMainImg(src, el){
+  document.getElementById('hp-main-img').style.backgroundImage = `url('${src}')`;
+  document.querySelectorAll('.hp-thumb').forEach(t=>t.classList.remove('active'));
+  el.classList.add('active');
+}
+
+function openBooking(hotelId, roomType, price){
+  const h = HOTELS_DATA.find(h=>h.id===hotelId);
+  document.getElementById('bk-hotel').textContent  = h.name;
+  document.getElementById('bk-room').textContent   = roomType;
+  document.getElementById('bk-when').textContent   = searchParams.when||'—';
+  document.getElementById('bk-who').textContent    = (searchParams.adults||'2')+' Adults';
+  document.getElementById('bk-price').textContent  = '$'+price+' /night';
+  document.getElementById('bk-total').textContent  = '$'+price;
+  document.getElementById('booking-modal').classList.add('active');
+}
+
+function closeBooking(){
+  document.getElementById('booking-modal').classList.remove('active');
+}
+
+document.querySelector('.sbtn').addEventListener('click', openSearchPage);
 </script>
+
+<!-- ══════════ SEARCH RESULTS PAGE ══════════ -->
+<div id="search-page" class="inner-page">
+  <div class="ip-nav">
+    <button class="ip-back" onclick="closePage('search-page')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 18 9 12 15 6"/></svg>
+      Back
+    </button>
+    <a href="#" class="logo" style="position:absolute;left:50%;transform:translateX(-50%);">
+      <img src="https://macqueen.co/images/macqueenlogo-en.svg" alt="MacQueen" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'">
+      <span style="display:none;font-family:'Cormorant Garamond',serif;font-size:20px;color:white;">Mac<span style="color:#c8a356">Queen</span></span>
+    </a>
+    <div style="width:80px"></div>
+  </div>
+
+  <!-- Trip summary bar -->
+  <div class="sp-bar">
+    <div class="sp-info">
+      <div class="sp-chip">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" width="14" height="14"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/></svg>
+        <span id="sp-where">Dubai</span>
+      </div>
+      <div class="sp-divider"></div>
+      <div class="sp-chip">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" width="14" height="14"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+        <span id="sp-when">—</span>
+      </div>
+      <div class="sp-divider"></div>
+      <div class="sp-chip">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" width="14" height="14"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75"/></svg>
+        <span id="sp-who">—</span>
+      </div>
+    </div>
+    <div class="sp-count"><span id="results-count">3</span> hotels found</div>
+  </div>
+
+  <!-- Results grid -->
+  <div class="sp-body">
+    <!-- Filters sidebar -->
+    <aside class="sp-filters">
+      <div class="sf-title">Filters</div>
+      <div class="sf-group">
+        <div class="sf-group-title">Price per night</div>
+        <div class="sf-range-labels"><span>$0</span><span>$1,500+</span></div>
+        <input type="range" min="0" max="1500" value="1500" class="sf-range">
+      </div>
+      <div class="sf-group">
+        <div class="sf-group-title">Star Rating</div>
+        <div class="sf-checks">
+          <label class="sf-check"><input type="checkbox" checked> ★★★★★ (5 Star)</label>
+          <label class="sf-check"><input type="checkbox" checked> ★★★★ (4 Star)</label>
+          <label class="sf-check"><input type="checkbox"> ★★★ (3 Star)</label>
+        </div>
+      </div>
+      <div class="sf-group">
+        <div class="sf-group-title">Amenities</div>
+        <div class="sf-checks">
+          <label class="sf-check"><input type="checkbox"> Pool</label>
+          <label class="sf-check"><input type="checkbox"> Spa</label>
+          <label class="sf-check"><input type="checkbox"> Free WiFi</label>
+          <label class="sf-check"><input type="checkbox"> Restaurant</label>
+          <label class="sf-check"><input type="checkbox"> Private Beach</label>
+        </div>
+      </div>
+      <div class="sf-group">
+        <div class="sf-group-title">Guest Rating</div>
+        <div class="sf-checks">
+          <label class="sf-check"><input type="checkbox"> Exceptional (9+)</label>
+          <label class="sf-check"><input type="checkbox"> Excellent (8+)</label>
+          <label class="sf-check"><input type="checkbox"> Very Good (7+)</label>
+        </div>
+      </div>
+    </aside>
+
+    <!-- Cards -->
+    <div class="results-wrap">
+      <div class="results-sort">
+        <span class="rs-label">Sort by:</span>
+        <button class="rs-btn active">Recommended</button>
+        <button class="rs-btn">Price ↑</button>
+        <button class="rs-btn">Rating</button>
+        <button class="rs-btn">Distance</button>
+      </div>
+      <div class="results-grid" id="results-grid"></div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════ HOTEL DETAIL PAGE ══════════ -->
+<div id="hotel-page" class="inner-page">
+  <div class="ip-nav">
+    <button class="ip-back" onclick="closeHotelPage()">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 18 9 12 15 6"/></svg>
+      Results
+    </button>
+    <a href="#" class="logo" style="position:absolute;left:50%;transform:translateX(-50%);">
+      <img src="https://macqueen.co/images/macqueenlogo-en.svg" alt="MacQueen" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'">
+      <span style="display:none;font-family:'Cormorant Garamond',serif;font-size:20px;color:white;">Mac<span style="color:#c8a356">Queen</span></span>
+    </a>
+    <div style="width:80px"></div>
+  </div>
+
+  <div class="hp-wrap">
+    <!-- LEFT: hotel info -->
+    <div class="hp-left">
+      <!-- Gallery -->
+      <div class="hp-gallery">
+        <div class="hp-main-img" id="hp-main-img"></div>
+        <div class="hp-thumbs" id="hp-thumbs"></div>
+      </div>
+
+      <!-- Header -->
+      <div class="hp-header">
+        <div>
+          <div class="hp-stars" id="hp-stars"></div>
+          <h1 class="hp-name" id="hp-name"></h1>
+          <div class="hp-city" id="hp-city"></div>
+        </div>
+        <div class="hp-rating-block">
+          <div class="hp-big-rating" id="hp-rating"></div>
+          <div class="hp-reviews" id="hp-reviews"></div>
+        </div>
+      </div>
+
+      <!-- Tabs -->
+      <div class="hp-tabs">
+        <button class="hp-tab active" onclick="switchTab('overview',this)">Overview</button>
+        <button class="hp-tab" onclick="switchTab('amenities',this)">Amenities</button>
+        <button class="hp-tab" onclick="switchTab('rooms',this)">Rooms</button>
+      </div>
+
+      <!-- Tab: Overview -->
+      <div class="hp-tab-content active" id="tab-overview">
+        <p class="hp-desc" id="hp-desc"></p>
+        <div class="hp-highlights">
+          <div class="hp-hl"><svg viewBox="0 0 24 24" fill="none" stroke="#c8a356" stroke-width="1.5" width="18" height="18"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg><span>Price Guarantee</span></div>
+          <div class="hp-hl"><svg viewBox="0 0 24 24" fill="none" stroke="#c8a356" stroke-width="1.5" width="18" height="18"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg><span>Free Cancellation</span></div>
+          <div class="hp-hl"><svg viewBox="0 0 24 24" fill="none" stroke="#c8a356" stroke-width="1.5" width="18" height="18"><path d="M22 16.92v3a2 2 0 01-2.18 2 19.79 19.79 0 01-8.63-3.07A19.5 19.5 0 013.07 9.81"/></svg><span>24/7 Support</span></div>
+        </div>
+      </div>
+
+      <!-- Tab: Amenities -->
+      <div class="hp-tab-content" id="tab-amenities">
+        <div class="hp-amenities" id="hp-amenities"></div>
+      </div>
+
+      <!-- Tab: Rooms -->
+      <div class="hp-tab-content" id="tab-rooms">
+        <div class="hp-rooms" id="hp-rooms"></div>
+      </div>
+    </div>
+
+    <!-- RIGHT: booking summary -->
+    <div class="hp-right">
+      <div class="bs-card">
+        <div class="bs-hotel-img" id="bs-img"></div>
+        <div class="bs-hotel-info">
+          <div class="bs-hotel-name" id="bs-hotel"></div>
+          <div class="bs-hotel-city" id="bs-city"></div>
+        </div>
+        <div class="bs-divider"></div>
+        <div class="bs-row"><span>Check-in / Check-out</span><strong id="bs-when">—</strong></div>
+        <div class="bs-row"><span>Guests</span><strong id="bs-who">—</strong></div>
+        <div class="bs-row"><span>Room</span><strong>1 Room</strong></div>
+        <div class="bs-divider"></div>
+        <div class="bs-row bs-total-row"><span>Total per night</span><strong id="bs-price" class="bs-price">—</strong></div>
+        <div class="bs-taxes">Taxes & fees included</div>
+        <button class="bs-cta" onclick="document.getElementById('hp-tabs').querySelector('.hp-tab:nth-child(3)').click(); switchTab('rooms', document.querySelectorAll('.hp-tab')[2])">
+          Choose a Room
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="16" height="16"><polyline points="9 18 15 12 9 6"/></svg>
+        </button>
+        <div class="bs-note">
+          <svg viewBox="0 0 24 24" fill="none" stroke="#c8a356" stroke-width="1.5" width="14" height="14"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+          Price match guarantee
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════ BOOKING MODAL ══════════ -->
+<div id="booking-modal" class="bk-modal-wrap" onclick="if(event.target===this)closeBooking()">
+  <div class="bk-modal">
+    <button class="bk-close" onclick="closeBooking()">✕</button>
+    <div class="bk-modal-title">Complete Your Booking</div>
+    <div class="bk-summary">
+      <div class="bk-row"><span>Hotel</span><strong id="bk-hotel"></strong></div>
+      <div class="bk-row"><span>Room</span><strong id="bk-room"></strong></div>
+      <div class="bk-row"><span>Dates</span><strong id="bk-when"></strong></div>
+      <div class="bk-row"><span>Guests</span><strong id="bk-who"></strong></div>
+      <div class="bk-divider"></div>
+      <div class="bk-row bk-total"><span>Total</span><strong id="bk-total" class="bk-price"></strong></div>
+    </div>
+    <div class="bk-form">
+      <div class="bk-field"><label>Full Name</label><input type="text" placeholder="Ahmed Al-Rashidi"></div>
+      <div class="bk-field"><label>Email</label><input type="email" placeholder="ahmed@example.com"></div>
+      <div class="bk-field"><label>Phone</label><input type="tel" placeholder="+966 5x xxx xxxx"></div>
+      <div class="bk-field"><label>Special Requests</label><textarea rows="2" placeholder="Early check-in, extra pillows…"></textarea></div>
+    </div>
+    <button class="bk-confirm">Confirm Booking →</button>
+    <div class="bk-secure"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="12" height="12"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg> Secured &amp; Encrypted</div>
+  </div>
+</div>
+
+<style>
+/* ══════════ INNER PAGES ══════════ */
+.inner-page{
+  position:fixed;inset:0;z-index:800;
+  background:var(--navy);
+  overflow-y:auto;
+  transform:translateX(100%);
+  transition:transform .4s cubic-bezier(.25,.46,.45,.94);
+}
+.inner-page.active{transform:translateX(0);}
+
+.ip-nav{
+  position:sticky;top:0;z-index:50;
+  display:flex;align-items:center;justify-content:space-between;
+  padding:14px 32px;
+  background:rgba(7,17,31,.96);
+  backdrop-filter:blur(16px);
+  border-bottom:1px solid var(--line);
+}
+.ip-back{
+  display:flex;align-items:center;gap:6px;
+  background:none;border:1px solid rgba(255,255,255,.15);
+  color:rgba(255,255,255,.7);font-family:var(--sans);
+  font-size:12px;padding:7px 14px;border-radius:20px;cursor:pointer;
+  transition:all .2s;
+}
+.ip-back:hover{border-color:var(--gold);color:var(--white);}
+.ip-back svg{width:14px;height:14px;}
+
+/* ── Search results bar ── */
+.sp-bar{
+  display:flex;align-items:center;justify-content:space-between;
+  padding:14px 32px;
+  background:var(--navy2);
+  border-bottom:1px solid var(--line);
+  flex-wrap:wrap;gap:12px;
+}
+.sp-info{display:flex;align-items:center;gap:10px;flex-wrap:wrap;}
+.sp-chip{display:flex;align-items:center;gap:6px;font-size:13px;color:rgba(255,255,255,.75);}
+.sp-divider{width:1px;height:16px;background:var(--line);}
+.sp-count{font-size:12px;color:var(--gold);font-weight:500;letter-spacing:.06em;}
+
+/* ── Filters + Results layout ── */
+.sp-body{display:flex;gap:0;min-height:calc(100vh - 120px);}
+.sp-filters{
+  width:240px;flex-shrink:0;
+  padding:24px 20px;
+  border-right:1px solid var(--line);
+  background:var(--navy2);
+}
+.sf-title{font-size:11px;font-weight:600;letter-spacing:.2em;text-transform:uppercase;color:var(--gold);margin-bottom:20px;}
+.sf-group{margin-bottom:22px;}
+.sf-group-title{font-size:11px;font-weight:500;color:rgba(255,255,255,.5);letter-spacing:.12em;text-transform:uppercase;margin-bottom:10px;}
+.sf-range{width:100%;accent-color:var(--gold);margin-top:6px;}
+.sf-range-labels{display:flex;justify-content:space-between;font-size:11px;color:rgba(255,255,255,.35);}
+.sf-checks{display:flex;flex-direction:column;gap:8px;}
+.sf-check{font-size:12px;color:rgba(255,255,255,.6);display:flex;align-items:center;gap:7px;cursor:pointer;}
+.sf-check input{accent-color:var(--gold);}
+
+/* ── Results wrap ── */
+.results-wrap{flex:1;padding:20px 24px;}
+.results-sort{display:flex;align-items:center;gap:8px;margin-bottom:18px;flex-wrap:wrap;}
+.rs-label{font-size:11px;color:var(--muted);margin-right:4px;}
+.rs-btn{background:none;border:1px solid rgba(255,255,255,.12);color:rgba(255,255,255,.5);font-family:var(--sans);font-size:11.5px;padding:6px 14px;border-radius:20px;cursor:pointer;transition:all .2s;}
+.rs-btn:hover,.rs-btn.active{border-color:var(--gold);color:var(--gold);}
+.results-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:16px;}
+
+/* ── Result card ── */
+.rc{background:var(--navy2);border:1px solid var(--line);border-radius:8px;overflow:hidden;cursor:pointer;transition:transform .3s,box-shadow .3s;}
+.rc:hover{transform:translateY(-4px);box-shadow:0 16px 40px rgba(0,0,0,.4);}
+.rc-img{height:180px;position:relative;background-size:cover;background-position:center;}
+.rc-badge{position:absolute;top:10px;left:10px;background:var(--gold);color:var(--navy);font-size:9px;font-weight:600;letter-spacing:.14em;text-transform:uppercase;padding:3px 9px;border-radius:2px;}
+.rc-save{position:absolute;top:10px;right:10px;width:28px;height:28px;background:rgba(7,17,31,.7);backdrop-filter:blur(6px);border-radius:50%;display:flex;align-items:center;justify-content:center;}
+.rc-save svg{width:12px;height:12px;stroke:var(--gold);}
+.rc-body{padding:16px;}
+.rc-loc{font-size:9.5px;letter-spacing:.18em;text-transform:uppercase;color:var(--gold);margin-bottom:4px;}
+.rc-name{font-family:var(--serif);font-size:18px;font-weight:400;color:var(--white);margin-bottom:6px;}
+.rc-stars{color:var(--gold);font-size:10px;letter-spacing:2px;margin-bottom:8px;}
+.rc-amen{display:flex;flex-wrap:wrap;gap:5px;margin-bottom:12px;}
+.rc-amen-tag{font-size:10px;padding:3px 8px;border:1px solid rgba(255,255,255,.1);border-radius:3px;color:rgba(255,255,255,.5);}
+.rc-amen-more{font-size:10px;padding:3px 8px;border:1px solid rgba(200,163,86,.3);border-radius:3px;color:var(--gold);}
+.rc-foot{display:flex;align-items:flex-end;justify-content:space-between;padding-top:10px;border-top:1px solid var(--line);}
+.rc-rating-wrap{display:flex;align-items:center;gap:7px;}
+.rc-rating{background:var(--gold);color:var(--navy);font-size:13px;font-weight:600;padding:4px 8px;border-radius:4px;}
+.rc-reviews{font-size:10px;color:var(--muted);}
+.rc-from-lbl{font-size:9px;color:var(--muted);text-transform:uppercase;letter-spacing:.1em;}
+.rc-price{font-family:var(--serif);font-size:22px;color:var(--gold2);}
+.rc-night{font-size:11px;color:var(--muted);}
+
+/* ══ HOTEL DETAIL PAGE ══ */
+.hp-wrap{display:grid;grid-template-columns:1fr 340px;gap:0;max-width:1280px;margin:0 auto;padding:28px 32px;align-items:start;}
+.hp-left{min-width:0;}
+
+/* Gallery */
+.hp-gallery{margin-bottom:24px;}
+.hp-main-img{height:380px;border-radius:8px;background-size:cover;background-position:center;transition:background-image .3s;}
+.hp-thumbs{display:flex;gap:8px;margin-top:8px;}
+.hp-thumb{flex:1;height:72px;border-radius:5px;background-size:cover;background-position:center;cursor:pointer;opacity:.55;transition:opacity .2s;border:2px solid transparent;}
+.hp-thumb.active,.hp-thumb:hover{opacity:1;border-color:var(--gold);}
+
+/* Header */
+.hp-header{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:20px;}
+.hp-stars{color:var(--gold);font-size:12px;letter-spacing:2px;margin-bottom:5px;}
+.hp-name{font-family:var(--serif);font-size:32px;font-weight:300;color:var(--white);}
+.hp-city{font-size:12px;color:var(--muted);margin-top:4px;}
+.hp-rating-block{text-align:right;}
+.hp-big-rating{font-family:var(--serif);font-size:48px;font-weight:300;color:var(--white);line-height:1;}
+.hp-reviews{font-size:11px;color:var(--muted);}
+
+/* Tabs */
+.hp-tabs{display:flex;gap:0;border-bottom:1px solid var(--line);margin-bottom:22px;}
+.hp-tab{background:none;border:none;border-bottom:2px solid transparent;color:rgba(255,255,255,.45);font-family:var(--sans);font-size:13px;padding:10px 20px;cursor:pointer;transition:all .2s;margin-bottom:-1px;}
+.hp-tab:hover{color:var(--white);}
+.hp-tab.active{color:var(--gold);border-bottom-color:var(--gold);}
+.hp-tab-content{display:none;}
+.hp-tab-content.active{display:block;}
+
+/* Overview */
+.hp-desc{font-size:13.5px;font-weight:300;color:rgba(255,255,255,.65);line-height:1.85;margin-bottom:22px;}
+.hp-highlights{display:flex;gap:20px;flex-wrap:wrap;}
+.hp-hl{display:flex;align-items:center;gap:8px;font-size:12.5px;color:rgba(255,255,255,.6);}
+
+/* Amenities */
+.hp-amenities{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;}
+.hp-amen-item{display:flex;align-items:center;gap:10px;padding:12px 14px;border:1px solid var(--line);border-radius:6px;font-size:12px;color:rgba(255,255,255,.65);}
+.hp-amen-ic{width:32px;height:32px;flex-shrink:0;display:flex;align-items:center;justify-content:center;border:1px solid rgba(200,163,86,.25);border-radius:50%;}
+.hp-amen-ic svg{width:15px;height:15px;stroke:var(--gold);}
+
+/* Rooms */
+.hp-rooms{display:flex;flex-direction:column;gap:14px;}
+.hp-room{display:flex;gap:16px;background:var(--navy2);border:1px solid var(--line);border-radius:8px;overflow:hidden;align-items:stretch;}
+.hp-room-img{width:140px;flex-shrink:0;background-size:cover;background-position:center;}
+.hp-room-body{flex:1;padding:16px 0 16px;}
+.hp-room-type{font-family:var(--serif);font-size:17px;font-weight:400;color:var(--white);margin-bottom:8px;}
+.hp-room-meta{display:flex;flex-wrap:wrap;gap:10px;font-size:11px;color:rgba(255,255,255,.45);}
+.hp-room-price{display:flex;flex-direction:column;align-items:flex-end;justify-content:center;padding:16px 20px;border-left:1px solid var(--line);min-width:130px;}
+.hp-room-amt{font-family:var(--serif);font-size:26px;color:var(--gold2);}
+.hp-room-per{font-size:10px;color:var(--muted);margin-bottom:10px;}
+.hp-book-btn{background:var(--gold);border:none;color:var(--navy);font-family:var(--sans);font-size:11px;font-weight:600;padding:8px 16px;border-radius:4px;cursor:pointer;transition:opacity .2s;white-space:nowrap;}
+.hp-book-btn:hover{opacity:.85;}
+
+/* Booking summary card */
+.hp-right{position:sticky;top:80px;}
+.bs-card{background:var(--navy2);border:1px solid var(--line);border-radius:10px;overflow:hidden;}
+.bs-hotel-img{height:140px;background-size:cover;background-position:center;}
+.bs-hotel-info{padding:14px 18px 0;}
+.bs-hotel-name{font-family:var(--serif);font-size:18px;font-weight:400;color:var(--white);}
+.bs-hotel-city{font-size:11px;color:var(--muted);margin-top:2px;}
+.bs-divider{height:1px;background:var(--line);margin:14px 18px;}
+.bs-row{display:flex;justify-content:space-between;align-items:center;padding:6px 18px;font-size:12.5px;color:rgba(255,255,255,.55);}
+.bs-row strong{color:var(--white);font-weight:500;}
+.bs-total-row{padding:10px 18px;}
+.bs-price{font-family:var(--serif);font-size:22px;color:var(--gold2) !important;}
+.bs-taxes{padding:0 18px 14px;font-size:10.5px;color:rgba(255,255,255,.25);}
+.bs-cta{
+  display:flex;align-items:center;justify-content:center;gap:8px;
+  width:calc(100% - 36px);margin:0 18px 12px;
+  background:linear-gradient(135deg,var(--gold),var(--gold2));
+  border:none;color:var(--navy);font-family:var(--sans);
+  font-size:13px;font-weight:600;padding:13px;border-radius:6px;
+  cursor:pointer;transition:opacity .2s;
+}
+.bs-cta:hover{opacity:.88;}
+.bs-note{display:flex;align-items:center;gap:6px;padding:0 18px 18px;font-size:11px;color:rgba(255,255,255,.3);}
+
+/* ══ BOOKING MODAL ══ */
+.bk-modal-wrap{
+  position:fixed;inset:0;z-index:900;
+  background:rgba(7,17,31,.88);backdrop-filter:blur(10px);
+  display:none;align-items:center;justify-content:center;padding:20px;
+}
+.bk-modal-wrap.active{display:flex;}
+.bk-modal{
+  background:var(--navy2);border:1px solid var(--line);border-radius:12px;
+  width:100%;max-width:480px;padding:32px;position:relative;
+  max-height:90vh;overflow-y:auto;
+}
+.bk-close{position:absolute;top:16px;right:16px;background:none;border:none;color:rgba(255,255,255,.4);font-size:16px;cursor:pointer;width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;}
+.bk-close:hover{color:var(--white);background:rgba(255,255,255,.08);}
+.bk-modal-title{font-family:var(--serif);font-size:22px;font-weight:300;color:var(--white);margin-bottom:20px;}
+.bk-summary{background:rgba(0,0,0,.2);border-radius:8px;padding:4px 0;margin-bottom:20px;}
+.bk-row{display:flex;justify-content:space-between;padding:8px 16px;font-size:12.5px;color:rgba(255,255,255,.5);}
+.bk-row strong{color:var(--white);font-weight:500;}
+.bk-divider{height:1px;background:var(--line);margin:4px 16px;}
+.bk-total strong{font-family:var(--serif);font-size:20px;}
+.bk-price{color:var(--gold2) !important;}
+.bk-form{display:flex;flex-direction:column;gap:12px;margin-bottom:20px;}
+.bk-field{display:flex;flex-direction:column;gap:5px;}
+.bk-field label{font-size:10.5px;font-weight:500;letter-spacing:.16em;text-transform:uppercase;color:rgba(255,255,255,.4);}
+.bk-field input,.bk-field textarea{background:rgba(0,0,0,.25);border:1px solid rgba(255,255,255,.1);border-radius:6px;padding:10px 14px;font-family:var(--sans);font-size:13px;color:var(--white);outline:none;transition:border-color .2s;resize:none;}
+.bk-field input:focus,.bk-field textarea:focus{border-color:var(--gold);}
+.bk-field input::placeholder,.bk-field textarea::placeholder{color:rgba(255,255,255,.2);}
+.bk-confirm{width:100%;background:linear-gradient(135deg,var(--gold),var(--gold2));border:none;color:var(--navy);font-family:var(--sans);font-size:13px;font-weight:600;padding:14px;border-radius:6px;cursor:pointer;transition:opacity .2s;margin-bottom:10px;}
+.bk-confirm:hover{opacity:.88;}
+.bk-secure{display:flex;align-items:center;justify-content:center;gap:6px;font-size:11px;color:rgba(255,255,255,.25);}
+
+@media(max-width:900px){
+  .hp-wrap{grid-template-columns:1fr;padding:16px;}
+  .hp-right{position:static;}
+  .sp-filters{display:none;}
+  .hp-amenities{grid-template-columns:repeat(2,1fr);}
+}
+@media(max-width:600px){
+  .results-grid{grid-template-columns:1fr;}
+  .hp-amenities{grid-template-columns:1fr 1fr;}
+  .hp-main-img{height:240px;}
+}
+</style>
+
+<script>
+function switchTab(name, btn){
+  document.querySelectorAll('.hp-tab').forEach(t=>t.classList.remove('active'));
+  document.querySelectorAll('.hp-tab-content').forEach(t=>t.classList.remove('active'));
+  btn.classList.add('active');
+  document.getElementById('tab-'+name).classList.add('active');
+}
+
+</script>
+
+<!-- ══════════ MY TRIP PAGE ══════════ -->
+<div id="trip-page" class="inner-page">
+  <div class="ip-nav">
+    <button class="ip-back" onclick="closePage('trip-page')">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="15 18 9 12 15 6"/></svg>
+      Home
+    </button>
+    <a href="#" class="logo" style="position:absolute;left:50%;transform:translateX(-50%);">
+      <span style="font-family:'Cormorant Garamond',serif;font-size:20px;color:white;">Mac<span style="color:#c8a356">Queen</span></span>
+    </a>
+    <div style="width:80px"></div>
+  </div>
+
+  <div class="tp-wrap">
+
+    <!-- ── LEFT COLUMN ── -->
+    <div class="tp-left">
+
+      <!-- Traveler Profile -->
+      <div class="tp-card">
+        <div class="tp-card-header">
+          <div class="tp-section-label">Traveler Profile</div>
+        </div>
+        <div class="tp-profile">
+          <div class="tp-avatar">A</div>
+          <div class="tp-profile-info">
+            <div class="tp-profile-name">Ahmed Al-Rashidi</div>
+            <div class="tp-profile-meta">Gold Member · Member since 2022</div>
+            <div class="tp-badges">
+              <span class="tp-badge tp-badge-gold">⭐ Gold</span>
+              <span class="tp-badge">✈ 14 Trips</span>
+              <span class="tp-badge">🏨 28 Nights</span>
+            </div>
+          </div>
+          <div class="tp-loyalty">
+            <div class="tp-loyalty-pts">4,820</div>
+            <div class="tp-loyalty-lbl">Points</div>
+          </div>
+        </div>
+        <div class="tp-progress-wrap">
+          <div class="tp-progress-label">
+            <span>Gold → Platinum</span>
+            <span>4,820 / 10,000 pts</span>
+          </div>
+          <div class="tp-progress-bar"><div class="tp-progress-fill" style="width:48%"></div></div>
+        </div>
+      </div>
+
+      <!-- Active Booking -->
+      <div class="tp-card">
+        <div class="tp-card-header">
+          <div class="tp-section-label">Upcoming Trip</div>
+          <span class="tp-status tp-status-confirmed">● Confirmed</span>
+        </div>
+        <div class="tp-booking-hero" style="background-image:url('https://images.unsplash.com/photo-1566073771259-6a8506099945?w=800&q=80')">
+          <div class="tp-booking-ov"></div>
+          <div class="tp-booking-info">
+            <div class="tp-booking-name">The Ritz-Carlton</div>
+            <div class="tp-booking-city">Dubai, UAE · 5★</div>
+          </div>
+          <div class="tp-booking-ref">Ref: MQ-2025-8841</div>
+        </div>
+        <div class="tp-booking-details">
+          <div class="tp-detail-grid">
+            <div class="tp-detail-item">
+              <div class="tp-detail-icon">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+              </div>
+              <div>
+                <div class="tp-detail-label">Check-in</div>
+                <div class="tp-detail-val">20 Mar 2026</div>
+              </div>
+            </div>
+            <div class="tp-detail-item">
+              <div class="tp-detail-icon">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+              </div>
+              <div>
+                <div class="tp-detail-label">Check-out</div>
+                <div class="tp-detail-val">25 Mar 2026</div>
+              </div>
+            </div>
+            <div class="tp-detail-item">
+              <div class="tp-detail-icon">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4"/></svg>
+              </div>
+              <div>
+                <div class="tp-detail-label">Guests</div>
+                <div class="tp-detail-val">2 Adults · 1 Child</div>
+              </div>
+            </div>
+            <div class="tp-detail-item">
+              <div class="tp-detail-icon">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M3 9l9-7 9 7v11a2 2 0 01-2 2H5a2 2 0 01-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+              </div>
+              <div>
+                <div class="tp-detail-label">Room</div>
+                <div class="tp-detail-val">Premier Sea View</div>
+              </div>
+            </div>
+            <div class="tp-detail-item">
+              <div class="tp-detail-icon">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 000 7h5a3.5 3.5 0 010 7H6"/></svg>
+              </div>
+              <div>
+                <div class="tp-detail-label">Total Paid</div>
+                <div class="tp-detail-val tp-gold">$2,800</div>
+              </div>
+            </div>
+            <div class="tp-detail-item">
+              <div class="tp-detail-icon">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+              </div>
+              <div>
+                <div class="tp-detail-label">Duration</div>
+                <div class="tp-detail-val">5 Nights</div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="tp-booking-actions">
+          <button class="tp-action-btn tp-action-primary">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" width="14" height="14"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+            Download Voucher
+          </button>
+          <button class="tp-action-btn">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" width="14" height="14"><polyline points="23 7 16 12 23 17 23 7"/><rect x="1" y="5" width="15" height="14" rx="2"/></svg>
+            Contact Hotel
+          </button>
+          <button class="tp-action-btn tp-action-danger">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" width="14" height="14"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 01-2 2H7a2 2 0 01-2-2V6m3 0V4a1 1 0 011-1h4a1 1 0 011 1v2"/></svg>
+            Cancel Booking
+          </button>
+        </div>
+      </div>
+
+      <!-- Flight Info -->
+      <div class="tp-card">
+        <div class="tp-card-header">
+          <div class="tp-section-label">Flight Details</div>
+          <span class="tp-status tp-status-info">✈ Added</span>
+        </div>
+        <div class="tp-flight">
+          <div class="tp-flight-seg">
+            <div class="tp-flight-time">
+              <div class="tp-ftime">06:30</div>
+              <div class="tp-fcity">RUH</div>
+              <div class="tp-fdate">20 Mar</div>
+            </div>
+            <div class="tp-flight-line">
+              <div class="tp-fline-dot"></div>
+              <div class="tp-fline-track">
+                <div class="tp-fline-duration">2h 15m · Direct</div>
+              </div>
+              <div class="tp-fline-dot"></div>
+            </div>
+            <div class="tp-flight-time tp-flight-time-r">
+              <div class="tp-ftime">08:45</div>
+              <div class="tp-fcity">DXB</div>
+              <div class="tp-fdate">20 Mar</div>
+            </div>
+          </div>
+          <div class="tp-flight-meta">
+            <span>✈ Saudia · SV-565</span>
+            <span>Economy · Seat 14A</span>
+            <span>PNR: XKMT82</span>
+          </div>
+        </div>
+        <div class="tp-flight" style="margin-top:12px; padding-top:12px; border-top:1px solid var(--line);">
+          <div class="tp-flight-seg">
+            <div class="tp-flight-time">
+              <div class="tp-ftime">18:00</div>
+              <div class="tp-fcity">DXB</div>
+              <div class="tp-fdate">25 Mar</div>
+            </div>
+            <div class="tp-flight-line">
+              <div class="tp-fline-dot"></div>
+              <div class="tp-fline-track">
+                <div class="tp-fline-duration">2h 10m · Direct</div>
+              </div>
+              <div class="tp-fline-dot"></div>
+            </div>
+            <div class="tp-flight-time tp-flight-time-r">
+              <div class="tp-ftime">20:10</div>
+              <div class="tp-fcity">RUH</div>
+              <div class="tp-fdate">25 Mar</div>
+            </div>
+          </div>
+          <div class="tp-flight-meta">
+            <span>✈ Saudia · SV-566</span>
+            <span>Economy · Seat 12C</span>
+            <span>PNR: XKMT83</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Itinerary -->
+      <div class="tp-card">
+        <div class="tp-card-header">
+          <div class="tp-section-label">Daily Itinerary</div>
+        </div>
+        <div class="tp-itinerary">
+          <div class="tp-itin-day">
+            <div class="tp-itin-date-col">
+              <div class="tp-itin-day-num">20</div>
+              <div class="tp-itin-month">MAR</div>
+              <div class="tp-itin-line"></div>
+            </div>
+            <div class="tp-itin-events">
+              <div class="tp-event tp-event-flight">
+                <div class="tp-event-icon">✈</div>
+                <div><div class="tp-event-title">Depart Riyadh → Dubai</div><div class="tp-event-sub">06:30 · Saudia SV-565</div></div>
+              </div>
+              <div class="tp-event tp-event-hotel">
+                <div class="tp-event-icon">🏨</div>
+                <div><div class="tp-event-title">Check-in: The Ritz-Carlton Dubai</div><div class="tp-event-sub">From 15:00 · Premier Sea View</div></div>
+              </div>
+              <div class="tp-event tp-event-activity">
+                <div class="tp-event-icon">🍽</div>
+                <div><div class="tp-event-title">Welcome Dinner</div><div class="tp-event-sub">La Baie Restaurant · 20:00</div></div>
+              </div>
+            </div>
+          </div>
+          <div class="tp-itin-day">
+            <div class="tp-itin-date-col">
+              <div class="tp-itin-day-num">21</div>
+              <div class="tp-itin-month">MAR</div>
+              <div class="tp-itin-line"></div>
+            </div>
+            <div class="tp-itin-events">
+              <div class="tp-event tp-event-activity">
+                <div class="tp-event-icon">🏖</div>
+                <div><div class="tp-event-title">Private Beach & Pool Day</div><div class="tp-event-sub">Hotel Amenities · All Day</div></div>
+              </div>
+              <div class="tp-event tp-event-activity">
+                <div class="tp-event-icon">🛍</div>
+                <div><div class="tp-event-title">Dubai Mall Shopping</div><div class="tp-event-sub">Shuttle available · 14:00</div></div>
+              </div>
+              <div class="tp-event tp-event-activity">
+                <div class="tp-event-icon">🌆</div>
+                <div><div class="tp-event-title">Burj Khalifa At the Top</div><div class="tp-event-sub">Sunset Visit · 18:30</div></div>
+              </div>
+            </div>
+          </div>
+          <div class="tp-itin-day">
+            <div class="tp-itin-date-col">
+              <div class="tp-itin-day-num">22</div>
+              <div class="tp-itin-month">MAR</div>
+              <div class="tp-itin-line"></div>
+            </div>
+            <div class="tp-itin-events">
+              <div class="tp-event tp-event-activity">
+                <div class="tp-event-icon">🏜</div>
+                <div><div class="tp-event-title">Desert Safari</div><div class="tp-event-sub">Dune bashing + BBQ Dinner · 15:00</div></div>
+              </div>
+              <div class="tp-event tp-event-activity">
+                <div class="tp-event-icon">💆</div>
+                <div><div class="tp-event-title">Ritz-Carlton Spa</div><div class="tp-event-sub">2hr Couples Massage · 11:00</div></div>
+              </div>
+            </div>
+          </div>
+          <div class="tp-itin-day">
+            <div class="tp-itin-date-col">
+              <div class="tp-itin-day-num">25</div>
+              <div class="tp-itin-month">MAR</div>
+            </div>
+            <div class="tp-itin-events">
+              <div class="tp-event tp-event-hotel">
+                <div class="tp-event-icon">🏨</div>
+                <div><div class="tp-event-title">Check-out</div><div class="tp-event-sub">By 12:00 · Late checkout available</div></div>
+              </div>
+              <div class="tp-event tp-event-flight">
+                <div class="tp-event-icon">✈</div>
+                <div><div class="tp-event-title">Return Dubai → Riyadh</div><div class="tp-event-sub">18:00 · Saudia SV-566</div></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- ── RIGHT COLUMN ── -->
+    <div class="tp-right">
+
+      <!-- Trip Summary -->
+      <div class="tp-card">
+        <div class="tp-section-label" style="margin-bottom:16px">Trip Summary</div>
+        <div class="tp-summary-map" style="background-image:url('https://images.unsplash.com/photo-1512453979798-5ea266f8880c?w=600&q=80')">
+          <div class="tp-map-pin">📍 Dubai, UAE</div>
+        </div>
+        <div class="tp-summary-rows">
+          <div class="tp-sum-row"><span>Destination</span><strong>Dubai, UAE 🇦🇪</strong></div>
+          <div class="tp-sum-row"><span>Trip Dates</span><strong>20 – 25 Mar 2026</strong></div>
+          <div class="tp-sum-row"><span>Duration</span><strong>5 Nights / 6 Days</strong></div>
+          <div class="tp-sum-row"><span>Travelers</span><strong>2 Adults · 1 Child</strong></div>
+          <div class="tp-sum-row"><span>Hotel</span><strong>The Ritz-Carlton</strong></div>
+          <div class="tp-sum-row"><span>Room Type</span><strong>Premier Sea View</strong></div>
+          <div class="tp-sum-divider"></div>
+          <div class="tp-sum-row"><span>Hotel Cost</span><strong>$2,800</strong></div>
+          <div class="tp-sum-row"><span>Flights</span><strong>$680</strong></div>
+          <div class="tp-sum-row"><span>Activities</span><strong>$340</strong></div>
+          <div class="tp-sum-divider"></div>
+          <div class="tp-sum-row tp-sum-total"><span>Total Trip Cost</span><strong class="tp-gold">$3,820</strong></div>
+        </div>
+      </div>
+
+      <!-- Weather -->
+      <div class="tp-card">
+        <div class="tp-section-label" style="margin-bottom:14px">Weather Forecast</div>
+        <div class="tp-weather-city">Dubai, UAE</div>
+        <div class="tp-weather-days">
+          <div class="tp-wday"><div class="tp-wday-name">Thu</div><div class="tp-wday-icon">☀️</div><div class="tp-wday-temp">32°</div></div>
+          <div class="tp-wday"><div class="tp-wday-name">Fri</div><div class="tp-wday-icon">🌤</div><div class="tp-wday-temp">30°</div></div>
+          <div class="tp-wday"><div class="tp-wday-name">Sat</div><div class="tp-wday-icon">☀️</div><div class="tp-wday-temp">33°</div></div>
+          <div class="tp-wday"><div class="tp-wday-name">Sun</div><div class="tp-wday-icon">☀️</div><div class="tp-wday-temp">34°</div></div>
+          <div class="tp-wday"><div class="tp-wday-name">Mon</div><div class="tp-wday-icon">🌤</div><div class="tp-wday-temp">31°</div></div>
+        </div>
+      </div>
+
+      <!-- Packing Checklist -->
+      <div class="tp-card">
+        <div class="tp-card-header">
+          <div class="tp-section-label">Packing Checklist</div>
+          <span class="tp-check-progress">6/10</span>
+        </div>
+        <div class="tp-checklist">
+          <label class="tp-check-item"><input type="checkbox" checked> Passport & ID</label>
+          <label class="tp-check-item"><input type="checkbox" checked> Hotel Voucher</label>
+          <label class="tp-check-item"><input type="checkbox" checked> Flight Tickets</label>
+          <label class="tp-check-item"><input type="checkbox" checked> Travel Insurance</label>
+          <label class="tp-check-item"><input type="checkbox" checked> Power Adapter</label>
+          <label class="tp-check-item"><input type="checkbox" checked> Sunscreen SPF50+</label>
+          <label class="tp-check-item"><input type="checkbox"> Formal Attire (Dinner)</label>
+          <label class="tp-check-item"><input type="checkbox"> Swimwear</label>
+          <label class="tp-check-item"><input type="checkbox"> UAE Dirhams (AED)</label>
+          <label class="tp-check-item"><input type="checkbox"> Camera</label>
+        </div>
+      </div>
+
+      <!-- Emergency Contacts -->
+      <div class="tp-card">
+        <div class="tp-section-label" style="margin-bottom:14px">Emergency Contacts</div>
+        <div class="tp-contacts">
+          <div class="tp-contact"><div class="tp-contact-ic">🏨</div><div><div class="tp-contact-name">Ritz-Carlton Dubai</div><div class="tp-contact-val">+971 4 399 4000</div></div></div>
+          <div class="tp-contact"><div class="tp-contact-ic">✈</div><div><div class="tp-contact-name">Saudia Airlines</div><div class="tp-contact-val">+966 920 022 222</div></div></div>
+          <div class="tp-contact"><div class="tp-contact-ic">🆘</div><div><div class="tp-contact-name">UAE Emergency</div><div class="tp-contact-val">999</div></div></div>
+          <div class="tp-contact"><div class="tp-contact-ic">🏥</div><div><div class="tp-contact-name">Saudi Embassy Dubai</div><div class="tp-contact-val">+971 4 397 9999</div></div></div>
+          <div class="tp-contact"><div class="tp-contact-ic">💳</div><div><div class="tp-contact-name">MacQueen Support</div><div class="tp-contact-val">+966 800 123 4567</div></div></div>
+        </div>
+      </div>
+
+      <!-- Past Trips -->
+      <div class="tp-card">
+        <div class="tp-section-label" style="margin-bottom:14px">Past Trips</div>
+        <div class="tp-past-trips">
+          <div class="tp-past-trip">
+            <div class="tp-past-img" style="background-image:url('https://images.unsplash.com/photo-1502602898657-3e91760cbb34?w=300&q=80')"></div>
+            <div class="tp-past-info">
+              <div class="tp-past-name">Hotel Plaza Athenée</div>
+              <div class="tp-past-city">Paris, France · Jan 2026</div>
+              <div class="tp-past-stars">★★★★★</div>
+            </div>
+            <div class="tp-past-pts">+320 pts</div>
+          </div>
+          <div class="tp-past-trip">
+            <div class="tp-past-img" style="background-image:url('https://images.unsplash.com/photo-1524231757912-21f4fe3a7200?w=300&q=80')"></div>
+            <div class="tp-past-info">
+              <div class="tp-past-name">Four Seasons Bosphorus</div>
+              <div class="tp-past-city">Istanbul, Turkey · Oct 2025</div>
+              <div class="tp-past-stars">★★★★★</div>
+            </div>
+            <div class="tp-past-pts">+280 pts</div>
+          </div>
+          <div class="tp-past-trip">
+            <div class="tp-past-img" style="background-image:url('https://images.unsplash.com/photo-1559827260-dc66d52bef19?w=300&q=80')"></div>
+            <div class="tp-past-info">
+              <div class="tp-past-name">W Doha Hotel</div>
+              <div class="tp-past-city">Doha, Qatar · Aug 2025</div>
+              <div class="tp-past-stars">★★★★★</div>
+            </div>
+            <div class="tp-past-pts">+210 pts</div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<style>
+/* ══ MY TRIP PAGE ══ */
+.tp-wrap{
+  display:grid;
+  grid-template-columns:1fr 360px;
+  gap:20px;
+  max-width:1280px;
+  margin:0 auto;
+  padding:28px 32px 60px;
+  align-items:start;
+}
+.tp-left,.tp-right{display:flex;flex-direction:column;gap:16px;}
+.tp-right{position:sticky;top:72px;}
+
+.tp-card{
+  background:var(--navy2);
+  border:1px solid var(--line);
+  border-radius:10px;
+  overflow:hidden;
+  padding:20px;
+}
+.tp-card-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;}
+.tp-section-label{font-size:10px;font-weight:600;letter-spacing:.26em;text-transform:uppercase;color:var(--gold);}
+.tp-status{font-size:11px;font-weight:500;padding:4px 10px;border-radius:20px;}
+.tp-status-confirmed{background:rgba(34,197,94,.12);color:#4ade80;}
+.tp-status-info{background:rgba(200,163,86,.12);color:var(--gold);}
+
+/* Profile */
+.tp-profile{display:flex;align-items:center;gap:14px;margin-bottom:16px;}
+.tp-avatar{width:52px;height:52px;border-radius:50%;background:linear-gradient(135deg,var(--gold),var(--gold2));display:flex;align-items:center;justify-content:center;font-family:var(--serif);font-size:22px;color:var(--navy);font-weight:500;flex-shrink:0;}
+.tp-profile-name{font-family:var(--serif);font-size:18px;font-weight:400;color:var(--white);margin-bottom:3px;}
+.tp-profile-meta{font-size:11px;color:var(--muted);margin-bottom:7px;}
+.tp-badges{display:flex;flex-wrap:wrap;gap:6px;}
+.tp-badge{font-size:10px;padding:3px 9px;border:1px solid rgba(255,255,255,.12);border-radius:3px;color:rgba(255,255,255,.55);}
+.tp-badge-gold{border-color:rgba(200,163,86,.4);color:var(--gold2);}
+.tp-loyalty{margin-left:auto;text-align:center;flex-shrink:0;}
+.tp-loyalty-pts{font-family:var(--serif);font-size:28px;color:var(--gold2);line-height:1;}
+.tp-loyalty-lbl{font-size:9px;letter-spacing:.2em;text-transform:uppercase;color:var(--muted);}
+.tp-progress-wrap{margin-top:4px;}
+.tp-progress-label{display:flex;justify-content:space-between;font-size:10px;color:rgba(255,255,255,.3);margin-bottom:6px;}
+.tp-progress-bar{height:4px;background:rgba(255,255,255,.08);border-radius:2px;overflow:hidden;}
+.tp-progress-fill{height:100%;background:linear-gradient(to right,var(--gold),var(--gold2));border-radius:2px;transition:width 1.2s ease;}
+
+/* Booking hero */
+.tp-booking-hero{position:relative;height:160px;background-size:cover;background-position:center;margin:-20px -20px 0;border-radius:10px 10px 0 0;}
+.tp-booking-ov{position:absolute;inset:0;background:linear-gradient(to top,rgba(7,17,31,.9) 0%,rgba(7,17,31,.2) 100%);border-radius:10px 10px 0 0;}
+.tp-booking-info{position:absolute;bottom:14px;left:20px;}
+.tp-booking-name{font-family:var(--serif);font-size:22px;font-weight:300;color:var(--white);}
+.tp-booking-city{font-size:11px;color:rgba(255,255,255,.55);margin-top:2px;}
+.tp-booking-ref{position:absolute;top:12px;right:14px;font-size:10px;background:rgba(200,163,86,.15);border:1px solid rgba(200,163,86,.3);color:var(--gold);padding:4px 10px;border-radius:3px;letter-spacing:.08em;}
+.tp-booking-details{padding-top:16px;}
+.tp-detail-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
+.tp-detail-item{display:flex;align-items:center;gap:10px;padding:10px 12px;background:rgba(0,0,0,.2);border-radius:6px;}
+.tp-detail-icon{width:30px;height:30px;flex-shrink:0;display:flex;align-items:center;justify-content:center;border:1px solid rgba(200,163,86,.2);border-radius:50%;}
+.tp-detail-icon svg{width:14px;height:14px;stroke:var(--gold);}
+.tp-detail-label{font-size:9.5px;color:var(--muted);letter-spacing:.1em;text-transform:uppercase;margin-bottom:2px;}
+.tp-detail-val{font-size:13px;font-weight:500;color:var(--white);}
+.tp-gold{color:var(--gold2) !important;}
+.tp-booking-actions{display:flex;gap:8px;flex-wrap:wrap;padding-top:16px;border-top:1px solid var(--line);margin-top:16px;}
+.tp-action-btn{display:flex;align-items:center;gap:6px;background:none;border:1px solid rgba(255,255,255,.13);color:rgba(255,255,255,.6);font-family:var(--sans);font-size:11.5px;padding:8px 14px;border-radius:5px;cursor:pointer;transition:all .2s;flex:1;justify-content:center;}
+.tp-action-btn:hover{border-color:var(--gold);color:var(--white);}
+.tp-action-primary{background:var(--gold);border-color:var(--gold);color:var(--navy);font-weight:600;}
+.tp-action-primary:hover{opacity:.88;color:var(--navy);}
+.tp-action-danger:hover{border-color:#f87171;color:#f87171;}
+
+/* Flight */
+.tp-flight{padding:4px 0;}
+.tp-flight-seg{display:flex;align-items:center;gap:12px;margin-bottom:10px;}
+.tp-flight-time{text-align:center;}
+.tp-flight-time-r{text-align:center;}
+.tp-ftime{font-family:var(--serif);font-size:24px;font-weight:300;color:var(--white);line-height:1;}
+.tp-fcity{font-size:11px;font-weight:600;color:var(--gold);letter-spacing:.1em;}
+.tp-fdate{font-size:10px;color:var(--muted);}
+.tp-flight-line{flex:1;display:flex;align-items:center;gap:0;}
+.tp-fline-dot{width:7px;height:7px;border-radius:50%;border:1.5px solid var(--gold);background:var(--navy2);flex-shrink:0;}
+.tp-fline-track{flex:1;height:1px;background:rgba(200,163,86,.3);position:relative;display:flex;align-items:center;justify-content:center;}
+.tp-fline-duration{font-size:10px;color:var(--muted);background:var(--navy2);padding:0 8px;}
+.tp-flight-meta{display:flex;gap:14px;flex-wrap:wrap;font-size:11px;color:rgba(255,255,255,.35);}
+
+/* Itinerary */
+.tp-itinerary{display:flex;flex-direction:column;gap:0;}
+.tp-itin-day{display:flex;gap:16px;}
+.tp-itin-date-col{display:flex;flex-direction:column;align-items:center;width:40px;flex-shrink:0;}
+.tp-itin-day-num{font-family:var(--serif);font-size:22px;font-weight:300;color:var(--white);line-height:1;}
+.tp-itin-month{font-size:9px;letter-spacing:.18em;text-transform:uppercase;color:var(--gold);margin-bottom:8px;}
+.tp-itin-line{flex:1;width:1px;background:var(--line);min-height:20px;}
+.tp-itin-events{flex:1;padding-bottom:20px;display:flex;flex-direction:column;gap:8px;}
+.tp-event{display:flex;align-items:flex-start;gap:10px;padding:10px 14px;border-radius:6px;border:1px solid var(--line);}
+.tp-event-flight{border-color:rgba(200,163,86,.2);background:rgba(200,163,86,.04);}
+.tp-event-hotel{border-color:rgba(99,179,237,.2);background:rgba(99,179,237,.04);}
+.tp-event-activity{background:rgba(0,0,0,.15);}
+.tp-event-icon{font-size:16px;line-height:1;margin-top:1px;}
+.tp-event-title{font-size:13px;font-weight:500;color:var(--white);margin-bottom:2px;}
+.tp-event-sub{font-size:11px;color:var(--muted);}
+
+/* Summary map */
+.tp-summary-map{height:130px;background-size:cover;background-position:center;border-radius:7px;margin-bottom:14px;position:relative;overflow:hidden;}
+.tp-summary-map::after{content:'';position:absolute;inset:0;background:rgba(7,17,31,.4);}
+.tp-map-pin{position:absolute;bottom:10px;left:12px;z-index:1;font-size:12px;color:var(--white);font-weight:500;background:rgba(7,17,31,.7);padding:4px 10px;border-radius:3px;backdrop-filter:blur(6px);}
+.tp-summary-rows{display:flex;flex-direction:column;gap:0;}
+.tp-sum-row{display:flex;justify-content:space-between;padding:8px 0;font-size:12.5px;color:rgba(255,255,255,.5);border-bottom:1px solid rgba(255,255,255,.04);}
+.tp-sum-row strong{color:var(--white);font-weight:500;}
+.tp-sum-divider{height:1px;background:var(--line);margin:6px 0;}
+.tp-sum-total{padding-top:10px;}
+.tp-sum-total strong{font-family:var(--serif);font-size:20px;}
+
+/* Weather */
+.tp-weather-city{font-size:11px;color:var(--muted);margin-bottom:12px;}
+.tp-weather-days{display:flex;justify-content:space-between;}
+.tp-wday{text-align:center;flex:1;}
+.tp-wday-name{font-size:10px;color:var(--muted);margin-bottom:6px;text-transform:uppercase;letter-spacing:.1em;}
+.tp-wday-icon{font-size:20px;margin-bottom:6px;}
+.tp-wday-temp{font-family:var(--serif);font-size:17px;color:var(--white);}
+
+/* Checklist */
+.tp-checklist{display:flex;flex-direction:column;gap:8px;}
+.tp-check-item{display:flex;align-items:center;gap:9px;font-size:12.5px;color:rgba(255,255,255,.6);cursor:pointer;padding:6px 0;border-bottom:1px solid rgba(255,255,255,.04);}
+.tp-check-item input{accent-color:var(--gold);width:14px;height:14px;}
+.tp-check-item:has(input:checked){color:rgba(255,255,255,.35);text-decoration:line-through;}
+.tp-check-progress{font-size:11px;color:var(--gold);}
+
+/* Contacts */
+.tp-contacts{display:flex;flex-direction:column;gap:10px;}
+.tp-contact{display:flex;align-items:center;gap:12px;padding:10px 0;border-bottom:1px solid rgba(255,255,255,.05);}
+.tp-contact:last-child{border-bottom:none;}
+.tp-contact-ic{font-size:18px;width:34px;text-align:center;flex-shrink:0;}
+.tp-contact-name{font-size:12.5px;color:rgba(255,255,255,.65);margin-bottom:2px;}
+.tp-contact-val{font-size:12px;color:var(--gold);font-weight:500;}
+
+/* Past Trips */
+.tp-past-trips{display:flex;flex-direction:column;gap:10px;}
+.tp-past-trip{display:flex;align-items:center;gap:12px;padding:8px 0;border-bottom:1px solid rgba(255,255,255,.05);}
+.tp-past-trip:last-child{border-bottom:none;}
+.tp-past-img{width:52px;height:52px;border-radius:6px;background-size:cover;background-position:center;flex-shrink:0;}
+.tp-past-info{flex:1;min-width:0;}
+.tp-past-name{font-size:13px;font-weight:500;color:var(--white);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.tp-past-city{font-size:11px;color:var(--muted);}
+.tp-past-stars{color:var(--gold);font-size:9px;letter-spacing:1px;margin-top:2px;}
+.tp-past-pts{font-size:11px;color:#4ade80;font-weight:500;white-space:nowrap;}
+
+@media(max-width:1000px){
+  .tp-wrap{grid-template-columns:1fr;}
+  .tp-right{position:static;}
+}
+</style>
 </body>
 </html>
